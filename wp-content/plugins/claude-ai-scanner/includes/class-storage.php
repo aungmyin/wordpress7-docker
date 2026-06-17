@@ -1,6 +1,6 @@
 <?php
 /**
- * Storage Class - Save and retrieve scan results
+ * Storage Class - Save and retrieve scan results from database
  *
  * @package Claude_AI_Scanner
  */
@@ -11,14 +11,7 @@ if (!defined('ABSPATH')) {
 
 class Claude_AI_Storage {
     /**
-     * Option name for storing scan results
-     *
-     * @var string
-     */
-    private static $option_key = 'claude_ai_scanner_results';
-
-    /**
-     * Save scan result
+     * Save scan result to database
      *
      * @param string $scan_type Type of scan.
      * @param string $result Scan result/analysis.
@@ -26,39 +19,70 @@ class Claude_AI_Storage {
      * @return bool
      */
     public static function save_result($scan_type, $result, $data = []) {
-        $results = self::get_all_results();
+        global $wpdb;
 
-        $scan_result = [
-            'type' => $scan_type,
+        $table_name = Claude_AI_Database::get_table_name();
+
+        // Parse categories and summary
+        $categories = self::parse_result_categories($result, $scan_type);
+        $summary = self::generate_summary($scan_type, $data);
+
+        $insert_data = [
+            'site_id' => get_current_blog_id(),
+            'scan_type' => $scan_type,
             'result' => $result,
-            'data' => $data,
+            'data' => maybe_serialize($data),
+            'categories' => maybe_serialize($categories),
+            'summary' => maybe_serialize($summary),
             'timestamp' => current_time('mysql'),
-            'date' => current_time('Y-m-d H:i:s'),
         ];
 
-        // Parse result to extract categories and counts
-        $scan_result['categories'] = self::parse_result_categories($result, $scan_type);
-        $scan_result['summary'] = self::generate_summary($scan_type, $data);
+        $formats = ['%d', '%s', '%s', '%s', '%s', '%s', '%s'];
 
-        // Keep last 10 scans
-        if (is_array($results)) {
-            array_unshift($results, $scan_result);
-            $results = array_slice($results, 0, 10);
-        } else {
-            $results = [$scan_result];
-        }
+        $result = $wpdb->insert($table_name, $insert_data, $formats);
 
-        return update_option(self::$option_key, $results);
+        // Clean up old scans (keep last 100)
+        self::cleanup_old_results();
+
+        return $result !== false;
     }
 
     /**
      * Get all scan results
      *
+     * @param int $limit Maximum results to return.
      * @return array
      */
-    public static function get_all_results() {
-        $results = get_option(self::$option_key, []);
-        return is_array($results) ? $results : [];
+    public static function get_all_results($limit = 10) {
+        global $wpdb;
+
+        $table_name = Claude_AI_Database::get_table_name();
+        $site_id = get_current_blog_id();
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table_name} WHERE site_id = %d ORDER BY timestamp DESC LIMIT %d",
+                $site_id,
+                $limit
+            )
+        );
+
+        if (empty($results)) {
+            return [];
+        }
+
+        return array_map(function($row) {
+            return [
+                'id' => $row->id,
+                'type' => $row->scan_type,
+                'result' => $row->result,
+                'data' => maybe_unserialize($row->data),
+                'categories' => maybe_unserialize($row->categories),
+                'summary' => maybe_unserialize($row->summary),
+                'timestamp' => $row->timestamp,
+                'date' => $row->date_created,
+            ];
+        }, $results);
     }
 
     /**
@@ -67,7 +91,7 @@ class Claude_AI_Storage {
      * @return array|null
      */
     public static function get_latest_result() {
-        $results = self::get_all_results();
+        $results = self::get_all_results(1);
         return !empty($results) ? $results[0] : null;
     }
 
@@ -78,13 +102,33 @@ class Claude_AI_Storage {
      * @return array|null
      */
     public static function get_result_by_type($scan_type) {
-        $results = self::get_all_results();
-        foreach ($results as $result) {
-            if ($result['type'] === $scan_type) {
-                return $result;
-            }
+        global $wpdb;
+
+        $table_name = Claude_AI_Database::get_table_name();
+        $site_id = get_current_blog_id();
+
+        $result = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table_name} WHERE site_id = %d AND scan_type = %s ORDER BY timestamp DESC LIMIT 1",
+                $site_id,
+                $scan_type
+            )
+        );
+
+        if (empty($result)) {
+            return null;
         }
-        return null;
+
+        return [
+            'id' => $result->id,
+            'type' => $result->scan_type,
+            'result' => $result->result,
+            'data' => maybe_unserialize($result->data),
+            'categories' => maybe_unserialize($result->categories),
+            'summary' => maybe_unserialize($result->summary),
+            'timestamp' => $result->timestamp,
+            'date' => $result->date_created,
+        ];
     }
 
     /**
@@ -191,7 +235,12 @@ class Claude_AI_Storage {
      * @return bool
      */
     public static function clear_results() {
-        return delete_option(self::$option_key);
+        global $wpdb;
+
+        $table_name = Claude_AI_Database::get_table_name();
+        $site_id = get_current_blog_id();
+
+        return $wpdb->delete($table_name, ['site_id' => $site_id]) !== false;
     }
 
     /**
@@ -200,9 +249,22 @@ class Claude_AI_Storage {
      * @return array
      */
     public static function get_dashboard_stats() {
-        $results = self::get_all_results();
+        global $wpdb;
+
+        $table_name = Claude_AI_Database::get_table_name();
+        $site_id = get_current_blog_id();
+
+        $total_scans = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE site_id = %d",
+                $site_id
+            )
+        );
+
+        $results = self::get_all_results(100);
+
         $stats = [
-            'total_scans' => count($results),
+            'total_scans' => intval($total_scans),
             'last_scan' => null,
             'scan_types' => [],
         ];
@@ -218,5 +280,32 @@ class Claude_AI_Storage {
         }
 
         return $stats;
+    }
+
+    /**
+     * Cleanup old scan results (keep last 100 per site)
+     *
+     * @return int Number of deleted records
+     */
+    private static function cleanup_old_results() {
+        global $wpdb;
+
+        $table_name = Claude_AI_Database::get_table_name();
+        $site_id = get_current_blog_id();
+
+        // Keep last 100 scans per site
+        $result = $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$table_name} WHERE site_id = %d AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id FROM {$table_name} WHERE site_id = %d ORDER BY timestamp DESC LIMIT 100
+                    ) AS keep
+                )",
+                $site_id,
+                $site_id
+            )
+        );
+
+        return $result !== false ? $result : 0;
     }
 }

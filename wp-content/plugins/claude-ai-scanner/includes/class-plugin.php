@@ -67,6 +67,7 @@ class Claude_AI_Scanner_Plugin {
     private function load_includes() {
         $includes_dir = plugin_dir_path(__FILE__);
 
+        require_once $includes_dir . 'class-database.php';
         require_once $includes_dir . 'class-storage.php';
         require_once $includes_dir . 'class-report-generator.php';
         require_once $includes_dir . 'class-scanner.php';
@@ -84,11 +85,11 @@ class Claude_AI_Scanner_Plugin {
      * @return void
      */
     private function register_hooks() {
+        add_action('admin_init', [$this, 'init_database']);
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_run_advanced_scan', [$this, 'ajax_run_scan']);
         add_action('wp_ajax_download_report', [$this, 'ajax_download_report']);
-        register_uninstall_hook(CLAUDE_AI_SCANNER_FILE, [__CLASS__, 'uninstall']);
     }
 
     /**
@@ -323,6 +324,36 @@ class Claude_AI_Scanner_Plugin {
     }
 
     /**
+     * Initialize database (called on admin_init)
+     *
+     * @return void
+     */
+    public function init_database() {
+        // Run migrations if needed
+        Claude_AI_Database::init();
+
+        // Cleanup old migration backups (weekly)
+        if (wp_cache_get('claude_ai_scanner_cleanup') === false) {
+            Claude_AI_Database::cleanup_migration_backups();
+            wp_cache_set('claude_ai_scanner_cleanup', 1, '', WEEK_IN_SECONDS);
+        }
+    }
+
+    /**
+     * Plugin activation
+     *
+     * @return void
+     */
+    public static function activate() {
+        if (!current_user_can('activate_plugins')) {
+            wp_die('Insufficient permissions to activate plugin.');
+        }
+
+        // Initialize database and run migrations
+        Claude_AI_Database::init();
+    }
+
+    /**
      * Uninstall plugin
      *
      * @return void
@@ -331,6 +362,11 @@ class Claude_AI_Scanner_Plugin {
         if (!current_user_can('manage_options')) {
             return;
         }
+
+        // Drop database table
+        Claude_AI_Database::uninstall();
+
+        // Delete configuration
         delete_option('claude_ai_scanner_api_key');
     }
 

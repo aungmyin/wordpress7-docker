@@ -30,13 +30,22 @@ define('CLAUDE_AI_SCANNER_URL', plugin_dir_url(__FILE__));
 define('CLAUDE_AI_SCANNER_VERSION', '3.0.0');
 define('CLAUDE_AI_SCANNER_NONCE_ACTION', 'claude_ai_scanner_action');
 
-// Only load plugin in admin area
+// Load database class first (needed for activation)
+require_once CLAUDE_AI_SCANNER_DIR . 'includes/class-database.php';
+
+// Only load full plugin in admin area
 if (!is_admin()) {
     return;
 }
 
 // Load main plugin class
 require_once CLAUDE_AI_SCANNER_DIR . 'includes/class-plugin.php';
+
+// Register activation hook
+register_activation_hook(__FILE__, ['Claude_AI_Scanner_Plugin', 'activate']);
+
+// Register uninstall hook
+register_uninstall_hook(__FILE__, ['Claude_AI_Scanner_Plugin', 'uninstall']);
 
 // Initialize plugin when WordPress loads
 add_action('plugins_loaded', function() {
