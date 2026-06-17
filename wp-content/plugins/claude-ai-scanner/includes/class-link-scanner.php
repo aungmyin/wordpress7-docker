@@ -79,6 +79,10 @@ class Claude_AI_Link_Scanner extends Claude_AI_Scanner {
                     'sslverify' => false,
                 ]);
 
+                if (is_wp_error($response)) {
+                    continue;
+                }
+
                 $code = wp_remote_retrieve_response_code($response);
 
                 if ($code == 404 || $code == 410) {

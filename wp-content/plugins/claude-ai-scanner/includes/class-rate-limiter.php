@@ -243,7 +243,7 @@ class Claude_AI_Rate_Limiter {
         $last_request = get_transient($key);
 
         if (!$last_request) {
-            set_transient($key, time(), MINUTE_IN_SECONDS);
+            set_transient($key, microtime(true), MINUTE_IN_SECONDS);
             return true;
         }
 

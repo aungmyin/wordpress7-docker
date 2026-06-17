@@ -192,8 +192,13 @@ class Claude_AI_Database {
         $exists = self::table_exists($table_name);
 
         if ($exists) {
-            $count = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
-            $size = $wpdb->get_var("SELECT ROUND(((data_length + index_length) / 1024 / 1024), 2) FROM information_schema.TABLES WHERE table_schema = DATABASE() AND table_name = '{$table_name}'");
+            $count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}claude_ai_scanner_results"
+            ));
+            $size = $wpdb->get_var($wpdb->prepare(
+                "SELECT ROUND(((data_length + index_length) / 1024 / 1024), 2) FROM information_schema.TABLES WHERE table_schema = DATABASE() AND table_name = %s",
+                $table_name
+            ));
         } else {
             $count = 0;
             $size = 0;
