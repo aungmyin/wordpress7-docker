@@ -189,3 +189,114 @@ hr {
     content: ' ⟳';
     animation: spin 1s linear infinite;
 }
+
+/* Health and Performance Report Styles */
+.claude-health-report,
+.claude-performance-report {
+    margin-top: 20px;
+}
+
+.claude-health-report h2,
+.claude-performance-report h2 {
+    margin-top: 0;
+    color: #1f2937;
+}
+
+.claude-health-report > div,
+.claude-performance-report > div {
+    background: #f9fafb;
+    border-left: 4px solid #0073aa;
+    border-radius: 6px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #1f2937;
+}
+
+.claude-performance-report > div {
+    border-left-color: #dc3545;
+}
+
+/* Metrics Grid */
+#performance-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+#performance-metrics > div {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #0073aa;
+    text-align: center;
+}
+
+#performance-metrics > div > div:first-child {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+#performance-metrics > div > div:last-child {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+/* Section Cards */
+.wrap > div {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e7eb;
+}
+
+.wrap h1 {
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.wrap > p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+/* Button Styles */
+#scan-site-health,
+#analyze-performance {
+    background-color: #0073aa !important;
+    border-color: #0073aa !important;
+    color: white !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#scan-site-health:hover,
+#analyze-performance:hover {
+    background-color: #005a87 !important;
+    border-color: #005a87 !important;
+}
+
+#scan-site-health:disabled,
+#analyze-performance:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* List Styles */
+.wrap ul {
+    list-style: disc;
+    margin-left: 20px;
+    color: #1f2937;
+}
+
+.wrap ul li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
