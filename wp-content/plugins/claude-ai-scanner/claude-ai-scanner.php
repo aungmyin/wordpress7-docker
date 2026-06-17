@@ -3,14 +3,15 @@
  * Claude AI Scanner - WordPress Site Health & Performance Analyzer
  *
  * @package Claude_AI_Scanner
- * @author WordPress Developer
+ * @author Aung My In
  * @license GPL v2 or later
  *
  * Plugin Name: Claude AI Scanner
  * Plugin URI: https://github.com/aungmyin/wordpress7-docker
  * Description: Comprehensive AI-powered WordPress site analyzer. Scan for security issues, performance bottlenecks, broken links, SEO problems, and redirects. Get specific recommendations with Claude AI.
  * Version: 3.0.0
- * Author: WordPress Developer
+ * Author: Aung My In
+ * Author URI: https://github.com/aungmyin
  * License: GPL v2 or later
  * Text Domain: claude-ai-scanner
  * Domain Path: /languages

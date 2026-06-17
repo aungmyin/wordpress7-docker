@@ -221,7 +221,13 @@ GPL v2 or later
 
 ## Author
 
-WordPress Developer
+**Aung My In**  
+GitHub: [@aungmyin](https://github.com/aungmyin)  
+Email: [aung.designer@gmail.com](mailto:aung.designer@gmail.com)
+
+## Credits
+
+Built with [Claude AI](https://claude.ai) for WordPress 7 site analysis and optimization.
 
 ## Changelog
 
