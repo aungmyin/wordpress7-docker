@@ -15,7 +15,12 @@ if (!defined('ABSPATH')) {
 
 define('CLAUDE_AI_SCANNER_DIR', plugin_dir_path(__FILE__));
 define('CLAUDE_AI_SCANNER_URL', plugin_dir_url(__FILE__));
-define('CLAUDE_AI_SCANNER_VERSION', '1.0.0');
+define('CLAUDE_AI_SCANNER_VERSION', '2.0.0');
+
+// Security: Only load admin functionality if in admin area or AJAX request from admin
+if (!is_admin()) {
+    return;
+}
 
 // Admin menu and pages
 add_action('admin_menu', 'claude_ai_scanner_add_admin_menu');
@@ -206,9 +211,13 @@ function claude_ai_scanner_display_themes($api_key) {
     echo '</table>';
 }
 
-// AJAX handler for scanning
+// AJAX handler for scanning (admin only)
 add_action('wp_ajax_scan_plugin_theme', 'claude_ai_scanner_ajax_scan');
 function claude_ai_scanner_ajax_scan() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
     check_ajax_referer('scan_plugin_theme_nonce');
 
     $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
@@ -232,9 +241,13 @@ function claude_ai_scanner_ajax_scan() {
     wp_send_json_success($analysis);
 }
 
-// AJAX handler for full site health scan
+// AJAX handler for full site health scan (admin only)
 add_action('wp_ajax_scan_full_site_health', 'claude_ai_scanner_ajax_site_health');
 function claude_ai_scanner_ajax_site_health() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
     check_ajax_referer('scan_plugin_theme_nonce');
 
     $api_key = get_option('claude_ai_scanner_api_key', '');
@@ -258,18 +271,26 @@ function claude_ai_scanner_ajax_site_health() {
     wp_send_json_success($response);
 }
 
-// AJAX handler for performance metrics
+// AJAX handler for performance metrics (admin only)
 add_action('wp_ajax_get_performance_metrics', 'claude_ai_scanner_ajax_performance_metrics');
 function claude_ai_scanner_ajax_performance_metrics() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
     check_ajax_referer('scan_plugin_theme_nonce');
 
     $metrics = claude_ai_scanner_get_performance_metrics();
     wp_send_json_success($metrics);
 }
 
-// AJAX handler for performance analysis
+// AJAX handler for performance analysis (admin only)
 add_action('wp_ajax_analyze_performance', 'claude_ai_scanner_ajax_performance_analysis');
 function claude_ai_scanner_ajax_performance_analysis() {
+    if (!is_admin() || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
     check_ajax_referer('scan_plugin_theme_nonce');
 
     $api_key = get_option('claude_ai_scanner_api_key', '');
