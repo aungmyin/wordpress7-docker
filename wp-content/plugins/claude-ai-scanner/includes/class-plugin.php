@@ -67,6 +67,7 @@ class Claude_AI_Scanner_Plugin {
     private function load_includes() {
         $includes_dir = plugin_dir_path(__FILE__);
 
+        require_once $includes_dir . 'class-storage.php';
         require_once $includes_dir . 'class-scanner.php';
         require_once $includes_dir . 'class-performance-scanner.php';
         require_once $includes_dir . 'class-link-scanner.php';
@@ -114,14 +115,23 @@ class Claude_AI_Scanner_Plugin {
             'Claude AI Scanner',
             'AI Scanner',
             'manage_options',
-            'claude-ai-scanner',
-            [$this, 'render_advanced_page'],
+            'claude-ai-scanner-dashboard',
+            [$this, 'render_dashboard_page'],
             'dashicons-search',
             80
         );
 
         add_submenu_page(
-            'claude-ai-scanner',
+            'claude-ai-scanner-dashboard',
+            'Dashboard',
+            'Dashboard',
+            'manage_options',
+            'claude-ai-scanner-dashboard',
+            [$this, 'render_dashboard_page']
+        );
+
+        add_submenu_page(
+            'claude-ai-scanner-dashboard',
             'Advanced Scan',
             'Advanced Scan',
             'manage_options',
@@ -130,7 +140,7 @@ class Claude_AI_Scanner_Plugin {
         );
 
         add_submenu_page(
-            'claude-ai-scanner',
+            'claude-ai-scanner-dashboard',
             'Settings',
             'Settings',
             'manage_options',
@@ -152,6 +162,19 @@ class Claude_AI_Scanner_Plugin {
         ]);
 
         wp_enqueue_style('claude-ai-scanner', plugin_dir_url(CLAUDE_AI_SCANNER_FILE) . 'css/scanner.css', [], CLAUDE_AI_SCANNER_VERSION);
+    }
+
+    /**
+     * Render dashboard page
+     *
+     * @return void
+     */
+    public function render_dashboard_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        include plugin_dir_path(CLAUDE_AI_SCANNER_FILE) . 'templates/dashboard.php';
     }
 
     /**
@@ -228,6 +251,13 @@ class Claude_AI_Scanner_Plugin {
         if (is_wp_error($result)) {
             wp_send_json_error($result->get_error_message());
         }
+
+        // Save result to database
+        $scan_data = [];
+        if (method_exists($scanner, 'get_export_data')) {
+            $scan_data = $scanner->get_export_data();
+        }
+        Claude_AI_Storage::save_result($scan_type, $result, $scan_data);
 
         wp_send_json_success($result);
     }
