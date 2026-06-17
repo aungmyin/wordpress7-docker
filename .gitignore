@@ -1,0 +1,25 @@
+# Environment
+.env.local
+.env*.local
+
+# Docker volumes (not tracked)
+db_data/
+wp_data/
+
+# WordPress core (keep only wp-content)
+/wp-admin
+/wp-includes
+/wp-content/mu-plugins
+wp-*.php
+xmlrpc.php
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node (if using build tools)
+node_modules/
