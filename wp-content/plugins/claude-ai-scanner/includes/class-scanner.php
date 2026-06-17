@@ -87,6 +87,10 @@ abstract class Claude_AI_Scanner {
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
+        if (!is_array($body)) {
+            return new WP_Error('invalid_json', 'Invalid JSON response from Claude API');
+        }
+
         if (isset($body['error'])) {
             return new WP_Error('api_error', $body['error']['message']);
         }

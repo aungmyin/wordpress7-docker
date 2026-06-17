@@ -40,14 +40,16 @@ class Claude_AI_Redirect_Scanner extends Claude_AI_Scanner {
         // Check .htaccess
         $htaccess_file = ABSPATH . '.htaccess';
         if (file_exists($htaccess_file) && is_readable($htaccess_file)) {
-            $content = file_get_contents($htaccess_file);
+            $content = @file_get_contents($htaccess_file);
 
-            if (preg_match_all('/RewriteRule\s+(.+)/i', $content, $matches)) {
-                $data['htaccess_rules'] = count($matches[0]);
-            }
+            if ($content !== false) {
+                if (preg_match_all('/RewriteRule\s+(.+)/i', $content, $matches)) {
+                    $data['htaccess_rules'] = count($matches[0]);
+                }
 
-            if (preg_match_all('/Redirect\s+301\s+(.+)\s+(.+)/i', $content, $matches)) {
-                $data['direct_redirects'] = count($matches[0]);
+                if (preg_match_all('/Redirect\s+301\s+(.+)\s+(.+)/i', $content, $matches)) {
+                    $data['direct_redirects'] = count($matches[0]);
+                }
             }
         }
 
@@ -62,6 +64,10 @@ class Claude_AI_Redirect_Scanner extends Claude_AI_Scanner {
                 'sslverify' => false,
                 'follow_redirects' => false,
             ]);
+
+            if (is_wp_error($response)) {
+                continue;
+            }
 
             $code = wp_remote_retrieve_response_code($response);
             if ($code >= 300 && $code < 400) {

@@ -47,7 +47,7 @@ class Claude_AI_Performance_Scanner extends Claude_AI_Scanner {
 
             $response = wp_remote_get($url, [
                 'timeout' => 10,
-                'sslverify' => false,
+                'sslverify' => apply_filters('claude_ai_scanner_sslverify', true),
             ]);
 
             $load_time = microtime(true) - $time_start;
@@ -75,6 +75,10 @@ class Claude_AI_Performance_Scanner extends Claude_AI_Scanner {
      * @return string
      */
     private function prepare_prompt($perf_data) {
+        if (empty($perf_data)) {
+            return 'No pages could be scanned. Ensure your site has published posts or pages.';
+        }
+
         $avg_time = array_sum(array_column($perf_data, 'load_time')) / count($perf_data);
         $avg_size = array_sum(array_column($perf_data, 'size')) / count($perf_data);
 

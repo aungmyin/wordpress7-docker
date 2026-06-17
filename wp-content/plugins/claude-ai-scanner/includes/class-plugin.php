@@ -67,7 +67,6 @@ class Claude_AI_Scanner_Plugin {
     private function load_includes() {
         $includes_dir = plugin_dir_path(__FILE__);
 
-        require_once $includes_dir . 'class-api.php';
         require_once $includes_dir . 'class-scanner.php';
         require_once $includes_dir . 'class-performance-scanner.php';
         require_once $includes_dir . 'class-link-scanner.php';
@@ -243,7 +242,11 @@ class Claude_AI_Scanner_Plugin {
             wp_send_json_error('Unauthorized');
         }
 
-        check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
+        // Verify nonce from GET or POST
+        $nonce = isset($_REQUEST['_ajax_nonce']) ? sanitize_text_field($_REQUEST['_ajax_nonce']) : '';
+        if (!$nonce || !wp_verify_nonce($nonce, CLAUDE_AI_SCANNER_NONCE_ACTION)) {
+            wp_send_json_error('Nonce verification failed');
+        }
 
         $scan_type = isset($_POST['scan_type']) ? sanitize_text_field($_POST['scan_type']) : '';
         $format = isset($_POST['format']) ? sanitize_text_field($_POST['format']) : 'csv';
@@ -253,7 +256,17 @@ class Claude_AI_Scanner_Plugin {
         }
 
         $scanner_class = $this->scanners[$scan_type];
-        $scanner = new $scanner_class($this->api_key);
+
+        // Special handling for single URL scanner
+        if ($scan_type === 'single-url') {
+            $url = isset($_POST['url']) ? sanitize_url($_POST['url']) : '';
+            if (empty($url)) {
+                wp_send_json_error('Please provide a URL');
+            }
+            $scanner = new $scanner_class($this->api_key, $url);
+        } else {
+            $scanner = new $scanner_class($this->api_key);
+        }
 
         if (!method_exists($scanner, 'get_export_data')) {
             wp_send_json_error('Scanner does not support exports');

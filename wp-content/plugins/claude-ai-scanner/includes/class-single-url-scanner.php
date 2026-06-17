@@ -75,7 +75,7 @@ class Claude_AI_Single_URL_Scanner extends Claude_AI_Scanner {
         $time_start = microtime(true);
         $response = wp_remote_get($this->url, [
             'timeout' => 10,
-            'sslverify' => false,
+            'sslverify' => apply_filters('claude_ai_scanner_sslverify', true),
         ]);
         $load_time = microtime(true) - $time_start;
 

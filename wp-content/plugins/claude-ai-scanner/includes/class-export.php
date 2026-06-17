@@ -27,19 +27,26 @@ class Claude_AI_Export {
 
         $csv = fopen('php://temp', 'r+');
 
-        // Write headers
-        fputcsv($csv, $headers);
-
-        // Write data rows
-        foreach ($data as $row) {
-            fputcsv($csv, (array) $row);
+        if ($csv === false) {
+            return '';
         }
 
-        rewind($csv);
-        $output = stream_get_contents($csv);
-        fclose($csv);
+        try {
+            // Write headers
+            fputcsv($csv, $headers);
 
-        return $output;
+            // Write data rows
+            foreach ($data as $row) {
+                fputcsv($csv, (array) $row);
+            }
+
+            rewind($csv);
+            $output = stream_get_contents($csv);
+        } finally {
+            fclose($csv);
+        }
+
+        return $output ?? '';
     }
 
     /**

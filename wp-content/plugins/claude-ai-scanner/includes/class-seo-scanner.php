@@ -102,6 +102,10 @@ class Claude_AI_SEO_Scanner extends Claude_AI_Scanner {
      * @return string
      */
     private function prepare_prompt($seo_data) {
+        if (empty($seo_data)) {
+            return 'No pages could be analyzed. Ensure your site has published posts or pages.';
+        }
+
         $good_count = array_sum(array_map(fn($d) => ($d['quality'] === 'Good') ? 1 : 0, $seo_data));
         $fair_count = array_sum(array_map(fn($d) => ($d['quality'] === 'Fair') ? 1 : 0, $seo_data));
         $poor_count = array_sum(array_map(fn($d) => ($d['quality'] === 'Poor') ? 1 : 0, $seo_data));

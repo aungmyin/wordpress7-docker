@@ -32,7 +32,7 @@ class Claude_AI_Link_Scanner extends Claude_AI_Scanner {
      */
     private function find_broken_links() {
         $broken_links = [];
-        $urls_checked = [];
+        $urls_checked = []; // Will be converted to associative array
 
         $args = [
             'post_type' => ['post', 'page'],
@@ -47,10 +47,10 @@ class Claude_AI_Link_Scanner extends Claude_AI_Scanner {
 
             if (preg_match_all('/href=["\']([^"\']+)["\']/i', $content, $matches)) {
                 foreach ($matches[1] as $link) {
-                    if (in_array($link, $urls_checked)) {
+                    if (isset($urls_checked[$link])) {
                         continue;
                     }
-                    $urls_checked[] = $link;
+                    $urls_checked[$link] = true;
 
                     // Skip external links
                     if (strpos($link, 'http') === 0 && strpos($link, home_url()) === false) {
