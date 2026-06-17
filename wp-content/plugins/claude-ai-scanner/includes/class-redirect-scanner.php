@@ -90,13 +90,17 @@ class Claude_AI_Redirect_Scanner extends Claude_AI_Scanner {
      * @return string
      */
     private function prepare_prompt($redirect_data) {
+        $htaccess_rules = isset($redirect_data['htaccess_rules']) ? $redirect_data['htaccess_rules'] : 'None';
+        $direct_redirects = isset($redirect_data['direct_redirects']) ? $redirect_data['direct_redirects'] : 'None';
+        $redirect_count = count($redirect_data['active_redirects'] ?? []);
+
         $prompt = <<<PROMPT
 Analyze the redirect configuration and provide recommendations:
 
 Configuration Found:
-- .htaccess Rules: " . $redirect_data['htaccess_rules'] . "
-- Direct Redirects: " . $redirect_data['direct_redirects'] . "
-- Active Redirects Detected: " . count($redirect_data['active_redirects']) . "
+- .htaccess Rules: {$htaccess_rules}
+- Direct Redirects: {$direct_redirects}
+- Active Redirects Detected: {$redirect_count}
 
 Active Redirects:
 PROMPT;
