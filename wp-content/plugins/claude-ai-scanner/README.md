@@ -43,7 +43,7 @@ A WordPress plugin that uses Claude AI to analyze your plugins and themes for se
 
 ## What Claude Analyzes
 
-Each scan provides analysis in four areas:
+Each scan provides analysis in five areas:
 
 ### 1. Security
 - Potential vulnerabilities
@@ -68,6 +68,16 @@ Each scan provides analysis in four areas:
 - Compatibility with new WordPress 7.0 features
 - Recommendations for updating to latest standards
 - Opportunities to use new WordPress 7.0 APIs
+
+### 5. SEO & Link Health
+- **404 Risk Detection** — Identifies hardcoded URLs that might break
+- **Redirect Analysis** — Checks for proper 301/302 redirect implementations
+- **Meta Tags** — Reviews meta descriptions, keywords, and robots tags
+- **Structured Data** — Analyzes Schema.org and JSON-LD implementation
+- **Canonical Tags** — Verifies canonical tag usage
+- **Link Rot** — Detects broken links and redirect chains
+- **URL Patterns** — Identifies fragile or third-party URL dependencies
+- **Redirect Chains** — Finds inefficient redirect chains that hurt SEO
 
 ## Requirements
 

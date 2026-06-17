@@ -242,8 +242,11 @@ function claude_ai_scanner_analyze_with_claude($type, $path, $api_key) {
     // Read main file or readme
     $file_contents = claude_ai_scanner_read_file_info($full_path, $type);
 
+    // Perform SEO and link analysis
+    $seo_analysis = claude_ai_scanner_analyze_seo_links($full_path, $type);
+
     // Prepare prompt for Claude
-    $prompt = claude_ai_scanner_prepare_prompt($type, $data, $file_contents);
+    $prompt = claude_ai_scanner_prepare_prompt($type, $data, $file_contents, $seo_analysis);
 
     // Call Claude API
     $response = claude_ai_scanner_call_claude_api($prompt, $api_key);
@@ -293,8 +296,29 @@ function claude_ai_scanner_read_file_info($path, $type) {
     return $info;
 }
 
-function claude_ai_scanner_prepare_prompt($type, $data, $file_contents) {
+function claude_ai_scanner_prepare_prompt($type, $data, $file_contents, $seo_analysis = null) {
     $type_label = $type === 'plugin' ? 'Plugin' : 'Theme';
+
+    $seo_section = '';
+    if ($seo_analysis) {
+        $seo_section = "\n\n=== SEO & LINK ANALYSIS SCAN RESULTS ===\n";
+        if (!empty($seo_analysis['issues'])) {
+            $seo_section .= "Issues Found:\n";
+            foreach ($seo_analysis['issues'] as $issue) {
+                $seo_section .= "- $issue\n";
+            }
+        }
+        if (!empty($seo_analysis['urls_found'])) {
+            $seo_section .= "\nURLs Found in Code:\n";
+            $unique_urls = array_unique($seo_analysis['urls_found']);
+            foreach (array_slice($unique_urls, 0, 10) as $url) {
+                $seo_section .= "- $url\n";
+            }
+            if (count($unique_urls) > 10) {
+                $seo_section .= "- ... and " . (count($unique_urls) - 10) . " more URLs\n";
+            }
+        }
+    }
 
     $prompt = <<<PROMPT
 Analyze this WordPress $type_label and provide a comprehensive report covering:
@@ -303,6 +327,13 @@ Analyze this WordPress $type_label and provide a comprehensive report covering:
 2. **Code Quality**: Evaluate code structure, best practices, and maintainability.
 3. **Documentation**: Review the quality and completeness of documentation.
 4. **WordPress 7.0 Compatibility**: Check if it appears compatible with WordPress 7.0 (check for deprecated functions, new API usage opportunities).
+5. **SEO & Link Health**:
+   - Analyze hardcoded URLs for 404 risks
+   - Review redirect handling (301/302 implementations)
+   - Check meta tags and structured data
+   - Identify broken links or link rot patterns
+   - Assess redirect chains
+   - Review canonical tag handling
 
 $type_label Information:
 Name: {$data['Name']}
@@ -312,8 +343,17 @@ Author: {$data['Author'] ?? 'N/A'}
 
 Code Preview:
 $file_contents
+$seo_section
 
-Provide your analysis in a structured format with clear sections. Be specific and actionable.
+Provide your analysis in a structured format with clear sections. For the SEO/Link Health section, specifically mention:
+- Found URLs and their potential fragility (hardcoded, pointing to third-party services, etc.)
+- Redirect implementation patterns (proper 301/302 usage)
+- Potential 404 risks from URL structure
+- Meta tag and structured data implementation
+- Link validation mechanisms
+- Any redirect chains or infinite loops
+
+Be specific and actionable with recommendations for improvement.
 PROMPT;
 
     return $prompt;
@@ -360,6 +400,114 @@ function claude_ai_scanner_call_claude_api($prompt, $api_key) {
     }
 
     return new WP_Error('unexpected_response', 'Unexpected response from Claude API');
+}
+
+// SEO and Link Analysis
+function claude_ai_scanner_analyze_seo_links($path, $type) {
+    $issues = [];
+    $urls_found = [];
+
+    // Scan files for URLs and patterns
+    $files = claude_ai_scanner_get_php_files($path);
+
+    foreach ($files as $file) {
+        $content = file_get_contents($file);
+
+        // Find hardcoded URLs
+        if (preg_match_all('/https?:\/\/[^\s"\'<>\)]+/i', $content, $matches)) {
+            $urls_found = array_merge($urls_found, $matches[0]);
+        }
+
+        // Check for redirect patterns
+        if (preg_match('/wp_redirect|header\(\s*["\']Location/i', $content)) {
+            $issues[] = "✓ Found redirect handling in code";
+        }
+
+        // Check for hardcoded domain references
+        if (preg_match('/example\.com|yoursite\.com|localhost/i', $content)) {
+            $issues[] = "⚠️ Found hardcoded example/test domain references that might cause 404 issues";
+        }
+
+        // Check for broken URL patterns
+        if (preg_match('/\/wp-content\/.*\.(php|js|css)/i', $content)) {
+            $issues[] = "ℹ️ Direct file references to wp-content detected (potential 404 risk if URLs change)";
+        }
+
+        // Check for HTTP vs HTTPS consistency
+        $http_count = substr_count($content, 'http://');
+        $https_count = substr_count($content, 'https://');
+        if ($http_count > 0 && $https_count > 0) {
+            $issues[] = "⚠️ Mixed HTTP and HTTPS URLs detected (may cause redirect chains)";
+        }
+    }
+
+    // Check for meta tags and structured data
+    $html_files = array_filter($files, function($f) {
+        return preg_match('/\.(html|php)$/i', $f);
+    });
+
+    foreach ($html_files as $file) {
+        $content = file_get_contents($file);
+
+        if (preg_match('/<meta\s+name=["\'](description|keywords|robots)/i', $content)) {
+            $issues[] = "✓ Meta tags found in code";
+        }
+
+        if (preg_match('/"@context".*schema\.org/i', $content) || preg_match('/\bitemscope\b/i', $content)) {
+            $issues[] = "✓ Structured data (Schema.org) implemented";
+        }
+
+        if (preg_match('/<link[^>]*rel=["\'](canonical|alternate)/i', $content)) {
+            $issues[] = "✓ Canonical/alternate link tags implemented";
+        }
+    }
+
+    return [
+        'issues' => $issues,
+        'urls_found' => array_unique($urls_found),
+    ];
+}
+
+function claude_ai_scanner_get_php_files($path, $depth = 0, $max_depth = 3) {
+    $files = [];
+
+    if ($depth > $max_depth) {
+        return $files;
+    }
+
+    if (!is_dir($path)) {
+        return $files;
+    }
+
+    try {
+        $items = @scandir($path);
+        if ($items === false) {
+            return $files;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $full_path = $path . '/' . $item;
+
+            // Skip common directories
+            if (is_dir($full_path) && in_array($item, ['node_modules', '.git', 'dist', 'build', 'vendor'])) {
+                continue;
+            }
+
+            if (is_file($full_path) && preg_match('/\.(php|js|html)$/i', $full_path)) {
+                $files[] = $full_path;
+            } elseif (is_dir($full_path)) {
+                $files = array_merge($files, claude_ai_scanner_get_php_files($full_path, $depth + 1, $max_depth));
+            }
+        }
+    } catch (Exception $e) {
+        // Silently ignore scan errors
+    }
+
+    return $files;
 }
 
 // Enqueue scripts
