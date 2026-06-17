@@ -26,14 +26,19 @@ class Claude_AI_SEO_Scanner extends Claude_AI_Scanner {
     }
 
     /**
-     * Collect SEO metrics from pages
+     * Collect SEO metrics from pages (batch processing)
      *
      * @return array
      */
     private function collect_seo_metrics() {
+        // Determine sample size based on post count
+        $total_posts = wp_count_posts('post');
+        $post_count = $total_posts->publish + $total_posts->page;
+        $sample_size = min(100, max(30, intval($post_count / 5)));
+
         $args = [
             'post_type' => ['post', 'page'],
-            'numberposts' => 30,
+            'numberposts' => $sample_size,
         ];
 
         $posts = get_posts($args);

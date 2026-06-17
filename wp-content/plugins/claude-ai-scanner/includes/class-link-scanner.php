@@ -26,63 +26,93 @@ class Claude_AI_Link_Scanner extends Claude_AI_Scanner {
     }
 
     /**
-     * Find broken links in content
+     * Find broken links in content (optimized batch processing)
      *
      * @return array
      */
     private function find_broken_links() {
         $broken_links = [];
-        $urls_checked = []; // Will be converted to associative array
+        $urls_checked = [];
+        $all_links = [];
+
+        // Determine post sample size
+        $total_posts = wp_count_posts('post');
+        $post_count = $total_posts->publish + $total_posts->page;
+        $sample_size = min(100, max(50, intval($post_count / 5)));
 
         $args = [
             'post_type' => ['post', 'page'],
-            'numberposts' => 50,
+            'numberposts' => $sample_size,
         ];
 
         $posts = get_posts($args);
 
+        // Extract all links first
         foreach ($posts as $post) {
-            $url = get_permalink($post->ID);
             $content = $post->post_content;
 
             if (preg_match_all('/href=["\']([^"\']+)["\']/i', $content, $matches)) {
                 foreach ($matches[1] as $link) {
-                    if (isset($urls_checked[$link])) {
-                        continue;
-                    }
-                    $urls_checked[$link] = true;
+                    $normalized_link = $this->normalize_url($link);
 
-                    // Skip external links
-                    if (strpos($link, 'http') === 0 && strpos($link, home_url()) === false) {
-                        continue;
+                    if ($normalized_link && !isset($urls_checked[$normalized_link])) {
+                        $all_links[$normalized_link] = $post->post_title;
                     }
+                }
+            }
 
-                    // Make full URL if relative
-                    if (strpos($link, 'http') !== 0) {
-                        $link = home_url($link);
-                    }
+            if (count($all_links) >= 200) {
+                break;
+            }
+        }
 
-                    // Check link
-                    $response = wp_remote_head($link, ['sslverify' => false]);
-                    $code = wp_remote_retrieve_response_code($response);
+        // Check links in batches
+        $batch_size = 20;
+        $link_chunks = array_chunk($all_links, $batch_size, true);
 
-                    if ($code == 404 || $code == 410) {
-                        $broken_links[] = [
-                            'url' => $link,
-                            'status' => $code,
-                            'source' => $post->post_title,
-                            'severity' => 'Critical',
-                        ];
-                    }
+        foreach ($link_chunks as $links) {
+            foreach ($links as $link => $source) {
+                $urls_checked[$link] = true;
 
-                    if (count($urls_checked) >= 200) {
-                        break 2;
-                    }
+                $response = wp_remote_head($link, [
+                    'timeout' => 3,
+                    'sslverify' => false,
+                ]);
+
+                $code = wp_remote_retrieve_response_code($response);
+
+                if ($code == 404 || $code == 410) {
+                    $broken_links[] = [
+                        'url' => $link,
+                        'status' => $code,
+                        'source' => $source,
+                        'severity' => 'Critical',
+                    ];
                 }
             }
         }
 
         return $broken_links;
+    }
+
+    /**
+     * Normalize URL for processing
+     *
+     * @param string $url URL to normalize.
+     * @return string|false Normalized URL or false if external/invalid.
+     */
+    private function normalize_url($url) {
+        // Skip external links
+        if (strpos($url, 'http') === 0 && strpos($url, home_url()) === false) {
+            return false;
+        }
+
+        // Make full URL if relative
+        if (strpos($url, 'http') !== 0) {
+            $url = home_url($url);
+        }
+
+        return $url;
     }
 
     /**

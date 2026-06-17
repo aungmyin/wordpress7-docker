@@ -50,6 +50,40 @@ abstract class Claude_AI_Scanner {
     }
 
     /**
+     * Chunk array into smaller pieces for batch processing
+     *
+     * @param array $items Items to chunk.
+     * @param int   $size Chunk size.
+     * @return array Array of chunks.
+     */
+    protected function chunk_items($items, $size = 20) {
+        return array_chunk($items, $size);
+    }
+
+    /**
+     * Get WP posts with optimized query
+     *
+     * @param int $limit Maximum posts to fetch.
+     * @return array Post objects.
+     */
+    protected function get_posts($limit = 100) {
+        $args = [
+            'post_type' => ['post', 'page'],
+            'post_status' => 'publish',
+            'posts_per_page' => $limit,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'fields' => 'ids',
+        ];
+
+        $post_ids = get_posts($args);
+
+        return array_map(function($id) {
+            return get_post($id);
+        }, $post_ids);
+    }
+
+    /**
      * Call Claude API with prompt
      *
      * @param string $prompt The analysis prompt.

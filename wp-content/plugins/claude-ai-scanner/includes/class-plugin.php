@@ -69,6 +69,8 @@ class Claude_AI_Scanner_Plugin {
 
         require_once $includes_dir . 'class-database.php';
         require_once $includes_dir . 'class-storage.php';
+        require_once $includes_dir . 'class-cache.php';
+        require_once $includes_dir . 'class-job-queue.php';
         require_once $includes_dir . 'class-report-generator.php';
         require_once $includes_dir . 'class-scanner.php';
         require_once $includes_dir . 'class-performance-scanner.php';
@@ -90,6 +92,8 @@ class Claude_AI_Scanner_Plugin {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_run_advanced_scan', [$this, 'ajax_run_scan']);
         add_action('wp_ajax_download_report', [$this, 'ajax_download_report']);
+        add_action('wp_ajax_check_scan_progress', [$this, 'ajax_check_progress']);
+        add_action('claude_ai_process_queue', ['Claude_AI_Job_Queue', 'process_queue']);
     }
 
     /**
@@ -218,7 +222,7 @@ class Claude_AI_Scanner_Plugin {
     }
 
     /**
-     * AJAX run scan
+     * AJAX run scan (sync or async based on site size)
      *
      * @return void
      */
@@ -235,6 +239,40 @@ class Claude_AI_Scanner_Plugin {
             wp_send_json_error('Invalid scan type');
         }
 
+        // Check site size to determine sync vs async
+        $post_count = $this->get_post_count();
+        $use_async = $post_count > 500;
+
+        if ($use_async) {
+            // Queue async job for large sites
+            $options = [];
+            if ($scan_type === 'single-url') {
+                $url = isset($_POST['url']) ? sanitize_url($_POST['url']) : '';
+                if (empty($url)) {
+                    wp_send_json_error('Please provide a URL');
+                }
+                $options['url'] = $url;
+            }
+
+            $job_id = Claude_AI_Job_Queue::enqueue($scan_type, $options);
+            wp_send_json_success([
+                'async' => true,
+                'job_id' => $job_id,
+                'message' => 'Scan queued for background processing. Checking progress...',
+            ]);
+        } else {
+            // Run sync for smaller sites
+            $this->run_scan_sync($scan_type);
+        }
+    }
+
+    /**
+     * Run scan synchronously
+     *
+     * @param string $scan_type Scan type.
+     * @return void
+     */
+    private function run_scan_sync($scan_type) {
         $scanner_class = $this->scanners[$scan_type];
 
         // Special handling for single URL scanner
@@ -261,7 +299,7 @@ class Claude_AI_Scanner_Plugin {
         }
         Claude_AI_Storage::save_result($scan_type, $result, $scan_data);
 
-        // Generate markdown report for Claude Code
+        // Generate markdown report
         $url = isset($_POST['url']) ? sanitize_url($_POST['url']) : '';
         $markdown = Claude_AI_Report_Generator::generate_markdown($scan_type, $result, $scan_data, $url);
         $report_path = Claude_AI_Report_Generator::save_report($scan_type, $markdown);
@@ -270,7 +308,52 @@ class Claude_AI_Scanner_Plugin {
             $result .= "\n\n📄 **Report saved:** " . basename($report_path);
         }
 
-        wp_send_json_success($result);
+        wp_send_json_success([
+            'async' => false,
+            'result' => $result,
+        ]);
+    }
+
+    /**
+     * AJAX check scan progress
+     *
+     * @return void
+     */
+    public function ajax_check_progress() {
+        if (!is_admin() || !current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+
+        if (empty($job_id)) {
+            wp_send_json_error('Job ID required');
+        }
+
+        $job = Claude_AI_Job_Queue::get_job($job_id);
+
+        if (!$job) {
+            wp_send_json_error('Job not found');
+        }
+
+        $progress = Claude_AI_Job_Queue::get_progress($job_id);
+
+        wp_send_json_success([
+            'status' => $job['status'],
+            'progress' => $progress,
+            'result' => $job['result'] ?? null,
+            'error' => $job['error'] ?? null,
+        ]);
+    }
+
+    /**
+     * Get total post count
+     *
+     * @return int
+     */
+    private function get_post_count() {
+        $counts = wp_count_posts('post');
+        return $counts->publish + $counts->draft + $counts->pending;
     }
 
     /**
@@ -368,6 +451,17 @@ class Claude_AI_Scanner_Plugin {
 
         // Delete configuration
         delete_option('claude_ai_scanner_api_key');
+        delete_option('claude_ai_pending_jobs');
+
+        // Clear WP Cron event
+        wp_clear_scheduled_hook('claude_ai_process_queue');
+
+        // Clear all cache
+        global $wpdb;
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $wpdb->esc_like('claude_ai_cache_%') . '%'
+        ));
     }
 
     /**

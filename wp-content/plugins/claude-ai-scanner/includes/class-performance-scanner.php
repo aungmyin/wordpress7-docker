@@ -26,14 +26,23 @@ class Claude_AI_Performance_Scanner extends Claude_AI_Scanner {
     }
 
     /**
-     * Collect performance metrics from pages
+     * Collect performance metrics from pages (batch processing)
      *
      * @return array
      */
     private function collect_page_metrics() {
+        $total_posts = wp_count_posts('post');
+        $post_count = $total_posts->publish + $total_posts->page;
+
+        // Determine sample size based on post count
+        $limit = 20;
+        if ($post_count > 100) {
+            $limit = min(100, intval($post_count / 10));
+        }
+
         $args = [
             'post_type' => ['post', 'page'],
-            'numberposts' => 20,
+            'numberposts' => $limit,
             'orderby' => 'date',
             'order' => 'DESC',
         ];
@@ -45,22 +54,26 @@ class Claude_AI_Performance_Scanner extends Claude_AI_Scanner {
             $url = get_permalink($post->ID);
             $time_start = microtime(true);
 
-            $response = wp_remote_get($url, [
-                'timeout' => 10,
+            // Use HEAD request (much faster) for initial check
+            $response = wp_remote_head($url, [
+                'timeout' => 5,
                 'sslverify' => apply_filters('claude_ai_scanner_sslverify', true),
             ]);
 
             $load_time = microtime(true) - $time_start;
 
             if (!is_wp_error($response)) {
-                $body = wp_remote_retrieve_body($response);
-                $size = strlen($body);
+                $size = 0;
+                $headers = wp_remote_retrieve_headers($response);
+                if (isset($headers['content-length'])) {
+                    $size = intval($headers['content-length']) / 1024;
+                }
 
                 $perf_data[] = [
                     'title' => $post->post_title,
                     'url' => $url,
                     'load_time' => round($load_time, 3),
-                    'size' => round($size / 1024, 2),
+                    'size' => round($size, 2),
                 ];
             }
         }
