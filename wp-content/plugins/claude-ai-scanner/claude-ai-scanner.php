@@ -15,11 +15,21 @@ if (!defined('ABSPATH')) {
 
 define('CLAUDE_AI_SCANNER_DIR', plugin_dir_path(__FILE__));
 define('CLAUDE_AI_SCANNER_URL', plugin_dir_url(__FILE__));
-define('CLAUDE_AI_SCANNER_VERSION', '2.0.0');
+define('CLAUDE_AI_SCANNER_VERSION', '2.0.1');
+define('CLAUDE_AI_SCANNER_NONCE_ACTION', 'claude_ai_scanner_action');
 
 // Security: Only load admin functionality if in admin area or AJAX request from admin
 if (!is_admin()) {
     return;
+}
+
+// Plugin lifecycle hooks
+register_uninstall_hook(__FILE__, 'claude_ai_scanner_uninstall');
+function claude_ai_scanner_uninstall() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+    delete_option('claude_ai_scanner_api_key');
 }
 
 // Admin menu and pages
@@ -170,7 +180,7 @@ function claude_ai_scanner_display_plugins($api_key) {
     foreach ($plugins as $plugin_file => $plugin_data) {
         $plugin_name = esc_html($plugin_data['Name']);
         $plugin_version = esc_html($plugin_data['Version']);
-        $nonce = wp_create_nonce('scan_plugin_' . $plugin_file);
+        $nonce = wp_create_nonce(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
         echo '<tr>';
         echo '<td><strong>' . $plugin_name . '</strong><br><small>' . esc_html($plugin_file) . '</small></td>';
@@ -194,16 +204,16 @@ function claude_ai_scanner_display_themes($api_key) {
     echo '<thead><tr><th>Theme</th><th>Version</th><th>Action</th></tr></thead>';
     echo '<tbody>';
 
-    foreach ($themes as $theme) {
+    foreach ($themes as $theme ) {
         $theme_name = esc_html($theme->get('Name'));
         $theme_version = esc_html($theme->get('Version'));
-        $theme_dir = basename($theme->get_stylesheet_directory());
-        $nonce = wp_create_nonce('scan_theme_' . $theme_dir);
+        $theme_slug = $theme->get_stylesheet();
+        $nonce = wp_create_nonce(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
         echo '<tr>';
-        echo '<td><strong>' . $theme_name . '</strong><br><small>' . esc_html($theme_dir) . '</small></td>';
+        echo '<td><strong>' . $theme_name . '</strong><br><small>' . esc_html($theme_slug) . '</small></td>';
         echo '<td>' . $theme_version . '</td>';
-        echo '<td><button class="button scan-btn" data-type="theme" data-path="' . esc_attr($theme_dir) . '" data-nonce="' . esc_attr($nonce) . '">Scan with AI</button></td>';
+        echo '<td><button class="button scan-btn" data-type="theme" data-path="' . esc_attr($theme_slug) . '" data-nonce="' . esc_attr($nonce) . '">Scan with AI</button></td>';
         echo '</tr>';
     }
 
@@ -218,7 +228,7 @@ function claude_ai_scanner_ajax_scan() {
         wp_send_json_error('Unauthorized access');
     }
 
-    check_ajax_referer('scan_plugin_theme_nonce');
+    check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
     $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
     $path = isset($_POST['path']) ? sanitize_text_field($_POST['path']) : '';
@@ -248,7 +258,7 @@ function claude_ai_scanner_ajax_site_health() {
         wp_send_json_error('Unauthorized access');
     }
 
-    check_ajax_referer('scan_plugin_theme_nonce');
+    check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
     $api_key = get_option('claude_ai_scanner_api_key', '');
     if (!$api_key) {
@@ -278,7 +288,7 @@ function claude_ai_scanner_ajax_performance_metrics() {
         wp_send_json_error('Unauthorized access');
     }
 
-    check_ajax_referer('scan_plugin_theme_nonce');
+    check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
     $metrics = claude_ai_scanner_get_performance_metrics();
     wp_send_json_success($metrics);
@@ -291,7 +301,7 @@ function claude_ai_scanner_ajax_performance_analysis() {
         wp_send_json_error('Unauthorized access');
     }
 
-    check_ajax_referer('scan_plugin_theme_nonce');
+    check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
     $api_key = get_option('claude_ai_scanner_api_key', '');
     if (!$api_key) {
@@ -315,6 +325,12 @@ function claude_ai_scanner_ajax_performance_analysis() {
 }
 
 function claude_ai_scanner_analyze_with_claude($type, $path, $api_key) {
+    // Validate and sanitize path to prevent traversal
+    $path = wp_normalize_path($path);
+    if (strpos($path, '..') !== false || strpos($path, './') === 0) {
+        return new WP_Error('invalid_path', 'Invalid path detected');
+    }
+
     // Get plugin/theme information
     if ($type === 'plugin') {
         $plugins = get_plugins();
@@ -323,27 +339,42 @@ function claude_ai_scanner_analyze_with_claude($type, $path, $api_key) {
         }
         $data = $plugins[$path];
         $full_path = WP_PLUGIN_DIR . '/' . $path;
+
+        // Verify path is within plugins directory
+        if (realpath($full_path) === false || strpos(realpath($full_path), realpath(WP_PLUGIN_DIR)) !== 0) {
+            return new WP_Error('invalid_path', 'Plugin path is outside plugins directory');
+        }
     } else {
         $themes = wp_get_themes();
-        $theme_dir = basename($path);
-        $theme = $themes[$path] ?? null;
-        if (!$theme) {
+        if (!isset($themes[$path])) {
             return new WP_Error('not_found', 'Theme not found');
         }
+        $theme = $themes[$path];
         $data = [
             'Name' => $theme->get('Name'),
             'Version' => $theme->get('Version'),
-            'Description' => $theme->get('Description'),
-            'Author' => $theme->get('Author'),
+            'Description' => $theme->get('Description') ?? '',
+            'Author' => $theme->get('Author') ?? '',
         ];
         $full_path = $theme->get_stylesheet_directory();
+
+        // Verify path is within themes directory
+        if (realpath($full_path) === false || strpos(realpath($full_path), realpath(get_theme_root())) !== 0) {
+            return new WP_Error('invalid_path', 'Theme path is outside themes directory');
+        }
     }
 
-    // Read main file or readme
+    // Read main file or readme with error handling
     $file_contents = claude_ai_scanner_read_file_info($full_path, $type);
+    if (is_wp_error($file_contents)) {
+        return $file_contents;
+    }
 
-    // Perform SEO and link analysis
+    // Perform SEO and link analysis (limit recursion)
     $seo_analysis = claude_ai_scanner_analyze_seo_links($full_path, $type);
+    if (is_wp_error($seo_analysis)) {
+        $seo_analysis = ['issues' => [], 'urls_found' => []];
+    }
 
     // Prepare prompt for Claude
     $prompt = claude_ai_scanner_prepare_prompt($type, $data, $file_contents, $seo_analysis);
@@ -357,6 +388,10 @@ function claude_ai_scanner_analyze_with_claude($type, $path, $api_key) {
 function claude_ai_scanner_read_file_info($path, $type) {
     $info = '';
 
+    if (!is_readable($path)) {
+        return new WP_Error('not_readable', 'Plugin/theme directory not readable');
+    }
+
     if ($type === 'plugin') {
         // Read main plugin file header
         $main_file = $path;
@@ -367,18 +402,22 @@ function claude_ai_scanner_read_file_info($path, $type) {
             }
         }
 
-        if (file_exists($main_file)) {
-            $info .= "=== Main Plugin File ===\n";
-            $content = file_get_contents($main_file);
-            $info .= substr($content, 0, 2000) . "...\n\n";
+        if (file_exists($main_file) && is_readable($main_file)) {
+            $content = @file_get_contents($main_file, false, null, 0, 2000);
+            if ($content !== false) {
+                $info .= "=== Main Plugin File ===\n";
+                $info .= $content . "...\n\n";
+            }
         }
     } else {
         // Read theme style.css
         $style_file = $path . '/style.css';
-        if (file_exists($style_file)) {
-            $info .= "=== Theme style.css ===\n";
-            $content = file_get_contents($style_file);
-            $info .= substr($content, 0, 1500) . "...\n\n";
+        if (file_exists($style_file) && is_readable($style_file)) {
+            $content = @file_get_contents($style_file, false, null, 0, 1500);
+            if ($content !== false) {
+                $info .= "=== Theme style.css ===\n";
+                $info .= $content . "...\n\n";
+            }
         }
     }
 
@@ -387,13 +426,15 @@ function claude_ai_scanner_read_file_info($path, $type) {
     if (!file_exists($readme_file)) {
         $readme_file = $path . '/readme.txt';
     }
-    if (file_exists($readme_file)) {
-        $info .= "=== README ===\n";
-        $content = file_get_contents($readme_file);
-        $info .= substr($content, 0, 1500) . "...\n";
+    if (file_exists($readme_file) && is_readable($readme_file)) {
+        $content = @file_get_contents($readme_file, false, null, 0, 1500);
+        if ($content !== false) {
+            $info .= "=== README ===\n";
+            $info .= $content . "...\n";
+        }
     }
 
-    return $info;
+    return !empty($info) ? $info : 'Unable to read file information.';
 }
 
 function claude_ai_scanner_prepare_prompt($type, $data, $file_contents, $seo_analysis = null) {
@@ -721,59 +762,81 @@ function claude_ai_scanner_performance_page() {
 function claude_ai_scanner_analyze_seo_links($path, $type) {
     $issues = [];
     $urls_found = [];
+    $file_count = 0;
+    $max_files = 100; // Limit file scanning
 
     // Scan files for URLs and patterns
-    $files = claude_ai_scanner_get_php_files($path);
+    $files = claude_ai_scanner_get_php_files($path, 0, 2); // Max depth 2
 
     foreach ($files as $file) {
-        $content = file_get_contents($file);
-
-        // Find hardcoded URLs
-        if (preg_match_all('/https?:\/\/[^\s"\'<>\)]+/i', $content, $matches)) {
-            $urls_found = array_merge($urls_found, $matches[0]);
+        if ($file_count++ >= $max_files) {
+            $issues[] = "ℹ️ Scan limited to first 100 files (plugin may be large)";
+            break;
         }
 
-        // Check for redirect patterns
-        if (preg_match('/wp_redirect|header\(\s*["\']Location/i', $content)) {
-            $issues[] = "✓ Found redirect handling in code";
+        if (!is_readable($file)) {
+            continue;
+        }
+
+        $content = @file_get_contents($file, false, null, 0, 10000); // Limit read to 10KB
+        if ($content === false) {
+            continue;
+        }
+
+        // Find hardcoded URLs (limit to 50)
+        if (preg_match_all('/https?:\/\/[^\s"\'<>\)]+/i', $content, $matches)) {
+            $urls_found = array_merge($urls_found, array_slice($matches[0], 0, 50));
+        }
+
+        // Check for redirect patterns (single pass)
+        if (!in_array('✓ Found redirect handling in code', $issues)) {
+            if (preg_match('/wp_redirect|header\(\s*["\']Location/i', $content)) {
+                $issues[] = "✓ Found redirect handling in code";
+            }
         }
 
         // Check for hardcoded domain references
-        if (preg_match('/example\.com|yoursite\.com|localhost/i', $content)) {
-            $issues[] = "⚠️ Found hardcoded example/test domain references that might cause 404 issues";
+        if (!in_array('⚠️ Found hardcoded example/test domain references that might cause 404 issues', $issues)) {
+            if (preg_match('/example\.com|yoursite\.com|localhost/i', $content)) {
+                $issues[] = "⚠️ Found hardcoded example/test domain references that might cause 404 issues";
+            }
         }
 
         // Check for broken URL patterns
-        if (preg_match('/\/wp-content\/.*\.(php|js|css)/i', $content)) {
-            $issues[] = "ℹ️ Direct file references to wp-content detected (potential 404 risk if URLs change)";
+        if (!in_array('ℹ️ Direct file references to wp-content detected (potential 404 risk if URLs change)', $issues)) {
+            if (preg_match('/\/wp-content\/.*\.(php|js|css)/i', $content)) {
+                $issues[] = "ℹ️ Direct file references to wp-content detected (potential 404 risk if URLs change)";
+            }
         }
 
         // Check for HTTP vs HTTPS consistency
-        $http_count = substr_count($content, 'http://');
-        $https_count = substr_count($content, 'https://');
-        if ($http_count > 0 && $https_count > 0) {
-            $issues[] = "⚠️ Mixed HTTP and HTTPS URLs detected (may cause redirect chains)";
-        }
-    }
-
-    // Check for meta tags and structured data
-    $html_files = array_filter($files, function($f) {
-        return preg_match('/\.(html|php)$/i', $f);
-    });
-
-    foreach ($html_files as $file) {
-        $content = file_get_contents($file);
-
-        if (preg_match('/<meta\s+name=["\'](description|keywords|robots)/i', $content)) {
-            $issues[] = "✓ Meta tags found in code";
+        if (!in_array('⚠️ Mixed HTTP and HTTPS URLs detected (may cause redirect chains)', $issues)) {
+            $http_count = substr_count($content, 'http://');
+            $https_count = substr_count($content, 'https://');
+            if ($http_count > 0 && $https_count > 0) {
+                $issues[] = "⚠️ Mixed HTTP and HTTPS URLs detected (may cause redirect chains)";
+            }
         }
 
-        if (preg_match('/"@context".*schema\.org/i', $content) || preg_match('/\bitemscope\b/i', $content)) {
-            $issues[] = "✓ Structured data (Schema.org) implemented";
-        }
+        // Check for meta tags and structured data
+        if (preg_match('/\.(html|php)$/i', $file)) {
+            if (!in_array('✓ Meta tags found in code', $issues)) {
+                if (preg_match('/<meta\s+name=["\'](description|keywords|robots)/i', $content)) {
+                    $issues[] = "✓ Meta tags found in code";
+                }
+            }
 
-        if (preg_match('/<link[^>]*rel=["\'](canonical|alternate)/i', $content)) {
-            $issues[] = "✓ Canonical/alternate link tags implemented";
+            if (!in_array('✓ Structured data (Schema.org) implemented', $issues)) {
+                if (preg_match('/"@context".*schema\.org/i', $content) || preg_match('/\bitemscope\b/i', $content)) {
+                    $issues[] = "✓ Structured data (Schema.org) implemented";
+                }
+            }
+
+            if (!in_array('✓ Canonical/alternate link tags implemented', $issues)) {
+                if (preg_match('/<link[^>]*rel=["\'](canonical|alternate)/i', $content)) {
+                    $issues[] = "✓ Canonical/alternate link tags implemented";
+                }
+            }
         }
     }
 
@@ -783,24 +846,25 @@ function claude_ai_scanner_analyze_seo_links($path, $type) {
     ];
 }
 
-function claude_ai_scanner_get_php_files($path, $depth = 0, $max_depth = 3) {
+function claude_ai_scanner_get_php_files($path, $depth = 0, $max_depth = 2) {
     $files = [];
 
     if ($depth > $max_depth) {
         return $files;
     }
 
-    if (!is_dir($path)) {
+    if (!is_dir($path) || !is_readable($path)) {
         return $files;
     }
 
     try {
         $items = @scandir($path);
-        if ($items === false) {
+        if ($items === false || !is_array($items)) {
             return $files;
         }
 
-        foreach ($items as $item) {
+        // Limit iterations to prevent endless loops
+        foreach (array_slice($items, 0, 500) as $item) {
             if ($item === '.' || $item === '..') {
                 continue;
             }
@@ -808,13 +872,18 @@ function claude_ai_scanner_get_php_files($path, $depth = 0, $max_depth = 3) {
             $full_path = $path . '/' . $item;
 
             // Skip common directories
-            if (is_dir($full_path) && in_array($item, ['node_modules', '.git', 'dist', 'build', 'vendor'])) {
+            if (is_dir($full_path) && in_array($item, ['node_modules', '.git', '.svn', 'dist', 'build', 'vendor', '.idea', '.vscode', 'coverage'], true)) {
+                continue;
+            }
+
+            // Skip symlinks to prevent infinite loops
+            if (is_link($full_path)) {
                 continue;
             }
 
             if (is_file($full_path) && preg_match('/\.(php|js|html)$/i', $full_path)) {
                 $files[] = $full_path;
-            } elseif (is_dir($full_path)) {
+            } elseif (is_dir($full_path) && count($files) < 200) { // Limit total files
                 $files = array_merge($files, claude_ai_scanner_get_php_files($full_path, $depth + 1, $max_depth));
             }
         }
@@ -829,15 +898,19 @@ function claude_ai_scanner_get_php_files($path, $depth = 0, $max_depth = 3) {
 function claude_ai_scanner_collect_site_data() {
     global $wpdb;
 
+    $posts_data = wp_count_posts();
+    $users_data = count_users();
+    $active_theme = wp_get_theme();
+
     $data = [
         'wp_version' => get_bloginfo('version'),
         'php_version' => phpversion(),
         'mysql_version' => $wpdb->db_version(),
         'active_plugins' => count(get_option('active_plugins', [])),
-        'total_posts' => wp_count_posts(),
-        'total_users' => count_users(),
+        'total_posts' => isset($posts_data->publish) ? $posts_data->publish : 0,
+        'total_users' => isset($users_data['total_users']) ? $users_data['total_users'] : 0,
         'installed_themes' => count(wp_get_themes()),
-        'active_theme' => wp_get_theme()->get('Name'),
+        'active_theme' => $active_theme ? $active_theme->get('Name') : 'Unknown',
         'db_tables' => count($wpdb->tables()),
         'posts_per_page' => get_option('posts_per_page'),
         'plugins' => [],
@@ -970,16 +1043,18 @@ WordPress Site Data:
 Active Plugins:
 PROMPT;
 
-    if (!empty($site_data['active_plugins_list'])) {
-        $prompt .= implode("\n", array_map(fn($p) => "- $p", $site_data['active_plugins_list']));
+    $active_plugins_list = isset($site_data['active_plugins_list']) ? $site_data['active_plugins_list'] : [];
+    if (!empty($active_plugins_list)) {
+        $prompt .= implode("\n", array_map(function($p) { return "- " . $p; }, $active_plugins_list));
     } else {
         $prompt .= "- None";
     }
 
-    if (!empty($site_data['security_issues'])) {
+    $security_issues = isset($site_data['security_issues']) ? $site_data['security_issues'] : [];
+    if (!empty($security_issues)) {
         $prompt .= "\n\nIdentified Security Issues:\n";
-        foreach ($site_data['security_issues'] as $issue) {
-            $prompt .= "- $issue\n";
+        foreach ($security_issues as $issue) {
+            $prompt .= "- " . $issue . "\n";
         }
     }
 
@@ -987,7 +1062,8 @@ PROMPT;
 
 Caching Plugins Installed:
 PROMPT;
-    $prompt .= !empty($site_data['caching_plugins']) ? implode(", ", $site_data['caching_plugins']) : "None";
+    $caching_plugins = isset($site_data['caching_plugins']) ? $site_data['caching_plugins'] : [];
+    $prompt .= !empty($caching_plugins) ? implode(", ", $caching_plugins) : "None";
 
     $prompt .= <<<PROMPT
 
