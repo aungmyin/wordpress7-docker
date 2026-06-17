@@ -68,6 +68,7 @@ class Claude_AI_Scanner_Plugin {
         $includes_dir = plugin_dir_path(__FILE__);
 
         require_once $includes_dir . 'class-storage.php';
+        require_once $includes_dir . 'class-report-generator.php';
         require_once $includes_dir . 'class-scanner.php';
         require_once $includes_dir . 'class-performance-scanner.php';
         require_once $includes_dir . 'class-link-scanner.php';
@@ -258,6 +259,15 @@ class Claude_AI_Scanner_Plugin {
             $scan_data = $scanner->get_export_data();
         }
         Claude_AI_Storage::save_result($scan_type, $result, $scan_data);
+
+        // Generate markdown report for Claude Code
+        $url = isset($_POST['url']) ? sanitize_url($_POST['url']) : '';
+        $markdown = Claude_AI_Report_Generator::generate_markdown($scan_type, $result, $scan_data, $url);
+        $report_path = Claude_AI_Report_Generator::save_report($scan_type, $markdown);
+
+        if (!is_wp_error($report_path)) {
+            $result .= "\n\n📄 **Report saved:** " . basename($report_path);
+        }
 
         wp_send_json_success($result);
     }

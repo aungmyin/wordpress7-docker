@@ -90,6 +90,31 @@ $stats = Claude_AI_Storage::get_dashboard_stats();
             </div>
         <?php endif; ?>
 
+        <!-- Reports Section -->
+        <?php
+        $reports = Claude_AI_Report_Generator::get_reports();
+        if (!empty($reports)):
+        ?>
+        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2>📄 Reports (Markdown for Claude Code)</h2>
+            <p style="color: #666; font-size: 13px;">Download reports to open in Claude Code for AI-assisted fixes.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                <?php foreach (array_slice($reports, 0, 6) as $report): ?>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                        <strong><?php echo esc_html(basename($report['name'], '.md')); ?></strong>
+                    </div>
+                    <div style="font-size: 12px; color: #999; margin-bottom: 10px;">
+                        <?php echo esc_html(date_i18n('M d, Y g:i A', $report['date'])); ?><br>
+                        <?php echo esc_html(size_format($report['size'])); ?>
+                    </div>
+                    <a href="<?php echo esc_url($report['url']); ?>" class="button button-small" download>📥 Download</a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Scan History -->
         <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <h2>Scan History</h2>

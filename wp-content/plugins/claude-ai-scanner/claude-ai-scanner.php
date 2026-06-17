@@ -10,7 +10,7 @@
  * Plugin URI: https://github.com/aungmyin/wordpress7-docker
  * Description: Comprehensive AI-powered WordPress site analyzer. Scan for security issues, performance bottlenecks, broken links, SEO problems, and redirects. Get specific recommendations with Claude AI.
  * Version: 3.0.0
- * Author: Aung My In
+ * Author: Aung Myin
  * Author URI: https://github.com/aungmyin
  * License: GPL v2 or later
  * Text Domain: claude-ai-scanner
