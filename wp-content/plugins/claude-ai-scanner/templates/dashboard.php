@@ -17,6 +17,29 @@ $stats = Claude_AI_Storage::get_dashboard_stats();
 <div class="wrap">
     <h1>Claude AI Scanner Dashboard</h1>
 
+    <?php
+    // Show rate limit status
+    $rate_stats = Claude_AI_Rate_Limiter::get_stats();
+    ?>
+    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid <?php echo $rate_stats['api_quota_status'] === 'Critical' ? '#dc3545' : ($rate_stats['api_quota_status'] === 'Warning' ? '#ffc107' : '#28a745'); ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            <div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase;">Scans This Hour</div>
+                <div style="font-size: 18px; font-weight: bold;"><?php echo esc_html($rate_stats['scans_this_hour']); ?></div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase;">Scans Today</div>
+                <div style="font-size: 18px; font-weight: bold;"><?php echo esc_html($rate_stats['scans_today']); ?></div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase;">API Quota Status</div>
+                <div style="font-size: 18px; font-weight: bold; color: <?php echo $rate_stats['api_quota_status'] === 'Critical' ? '#dc3545' : ($rate_stats['api_quota_status'] === 'Warning' ? '#ffc107' : '#28a745'); ?>">
+                    <?php echo esc_html($rate_stats['api_quota_status']); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php if (empty($results)): ?>
         <div style="background: white; padding: 40px; text-align: center; border-radius: 8px;">
             <p style="font-size: 16px; color: #666;">No scans yet. Start a scan to see results here.</p>

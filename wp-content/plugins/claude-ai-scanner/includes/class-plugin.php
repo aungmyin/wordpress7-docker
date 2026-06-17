@@ -70,6 +70,7 @@ class Claude_AI_Scanner_Plugin {
         require_once $includes_dir . 'class-database.php';
         require_once $includes_dir . 'class-storage.php';
         require_once $includes_dir . 'class-cache.php';
+        require_once $includes_dir . 'class-rate-limiter.php';
         require_once $includes_dir . 'class-job-queue.php';
         require_once $includes_dir . 'class-report-generator.php';
         require_once $includes_dir . 'class-scanner.php';
@@ -233,6 +234,23 @@ class Claude_AI_Scanner_Plugin {
 
         check_ajax_referer(CLAUDE_AI_SCANNER_NONCE_ACTION);
 
+        // Check rate limits first
+        $user_limit = Claude_AI_Rate_Limiter::check_user_scan_limit();
+        if (!$user_limit['allowed']) {
+            wp_send_json_error([
+                'message' => $user_limit['message'],
+                'reset_in' => $user_limit['reset_in'] ?? null,
+            ]);
+        }
+
+        $api_limit = Claude_AI_Rate_Limiter::check_api_rate_limit();
+        if (!$api_limit['allowed']) {
+            wp_send_json_error([
+                'message' => $api_limit['message'],
+                'wait_seconds' => $api_limit['wait_seconds'] ?? null,
+            ]);
+        }
+
         $scan_type = isset($_POST['scan_type']) ? sanitize_text_field($_POST['scan_type']) : '';
 
         if (!isset($this->scanners[$scan_type])) {
@@ -255,6 +273,8 @@ class Claude_AI_Scanner_Plugin {
             }
 
             $job_id = Claude_AI_Job_Queue::enqueue($scan_type, $options);
+            Claude_AI_Rate_Limiter::record_api_call($scan_type);
+
             wp_send_json_success([
                 'async' => true,
                 'job_id' => $job_id,
@@ -291,6 +311,9 @@ class Claude_AI_Scanner_Plugin {
         if (is_wp_error($result)) {
             wp_send_json_error($result->get_error_message());
         }
+
+        // Record API call for rate limiting
+        Claude_AI_Rate_Limiter::record_api_call($scan_type);
 
         // Save result to database
         $scan_data = [];

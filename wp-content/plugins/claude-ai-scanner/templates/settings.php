@@ -11,6 +11,23 @@ if (!defined('ABSPATH')) {
 
 $api_key = get_option('claude_ai_scanner_api_key', '');
 $masked_key = $api_key ? substr($api_key, 0, 10) . '...' . substr($api_key, -4) : 'Not set';
+
+// Save rate limit settings
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['claude_rate_limits'])) {
+    check_admin_referer('claude_ai_scanner_settings');
+    update_option('claude_ai_scanner_limits', [
+        'per_hour' => intval($_POST['rate_limit_per_hour'] ?? 10),
+        'per_day' => intval($_POST['rate_limit_per_day'] ?? 50),
+        'concurrent' => intval($_POST['rate_limit_concurrent'] ?? 3),
+    ]);
+    echo '<div class="notice notice-success"><p>Rate limits updated successfully!</p></div>';
+}
+
+$limits = get_option('claude_ai_scanner_limits', [
+    'per_hour' => 10,
+    'per_day' => 50,
+    'concurrent' => 3,
+]);
 ?>
 
 <div class="wrap">
@@ -31,6 +48,40 @@ $masked_key = $api_key ? substr($api_key, 0, 10) . '...' . substr($api_key, -4) 
                 </tr>
             </table>
             <?php submit_button('Save API Key'); ?>
+        </form>
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Rate Limiting & API Quotas</h2>
+        <p>Configure limits to protect your API quota and prevent abuse.</p>
+
+        <form method="post">
+            <?php wp_nonce_field('claude_ai_scanner_settings'); ?>
+            <input type="hidden" name="claude_rate_limits" value="1">
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><label for="rate_limit_per_hour">Scans per Hour (per user)</label></th>
+                    <td>
+                        <input type="number" id="rate_limit_per_hour" name="rate_limit_per_hour" value="<?php echo esc_attr($limits['per_hour']); ?>" min="1" max="100" style="width: 100px;">
+                        <p class="description">Maximum scans allowed per user per hour</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="rate_limit_per_day">Scans per Day (per user)</label></th>
+                    <td>
+                        <input type="number" id="rate_limit_per_day" name="rate_limit_per_day" value="<?php echo esc_attr($limits['per_day']); ?>" min="1" max="500" style="width: 100px;">
+                        <p class="description">Maximum scans allowed per user per day</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="rate_limit_concurrent">Concurrent Scans</label></th>
+                    <td>
+                        <input type="number" id="rate_limit_concurrent" name="rate_limit_concurrent" value="<?php echo esc_attr($limits['concurrent']); ?>" min="1" max="10" style="width: 100px;">
+                        <p class="description">Maximum number of simultaneous scans per user</p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button('Save Rate Limits'); ?>
         </form>
 
         <hr style="margin: 30px 0;">

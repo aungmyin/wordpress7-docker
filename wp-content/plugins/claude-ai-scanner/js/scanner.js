@@ -47,7 +47,18 @@
                             showResultsModal(type, response.data.result);
                         }
                     } else {
-                        alert('Error: ' + response.data);
+                        // Handle rate limit or other errors
+                        let errorMsg = 'Error: ';
+                        if (typeof response.data === 'object' && response.data.message) {
+                            errorMsg += response.data.message;
+                            if (response.data.reset_in) {
+                                const minutes = Math.ceil(response.data.reset_in / 60);
+                                errorMsg += ' (Try again in ' + minutes + ' minute' + (minutes !== 1 ? 's' : '') + ')';
+                            }
+                        } else {
+                            errorMsg += response.data;
+                        }
+                        alert(errorMsg);
                         $btn.prop('disabled', false).text('Start Scan');
                     }
                 },
