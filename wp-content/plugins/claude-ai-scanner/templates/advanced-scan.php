@@ -13,6 +13,18 @@ if (!defined('ABSPATH')) {
     <h1>Advanced Site Scanning</h1>
     <p>Run comprehensive scans for performance, SEO, broken links, and redirects across your site.</p>
 
+    <!-- Single URL Scan Section -->
+    <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #6f42c1; margin-bottom: 30px;">
+        <h2 style="margin-top: 0;">🎯 Scan Single URL</h2>
+        <p style="color: #666; margin-bottom: 15px;">Get detailed analysis for a specific page: performance, SEO, links, and optimization tips.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="single-url-input" placeholder="https://yoursite.com/page" style="flex: 1; min-width: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <button id="scan-single-url" class="button button-primary" style="padding: 10px 20px;">Scan This URL</button>
+        </div>
+        <p style="font-size: 12px; color: #999; margin-top: 10px;">Analyzes: Performance • SEO • Links • Speed • Structure</p>
+    </div>
+
+    <h2>Site-Wide Scans</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
 
         <!-- Performance Scan Card -->
@@ -79,6 +91,53 @@ if (!defined('ABSPATH')) {
 <script>
 (function($) {
     'use strict';
+
+    // Single URL scan
+    $('#scan-single-url').on('click', function(e) {
+        e.preventDefault();
+        const url = $('#single-url-input').val().trim();
+
+        if (!url) {
+            alert('Please enter a URL');
+            return;
+        }
+
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.prop('disabled', true).text('Analyzing URL...');
+        $('#advanced-results').html('<p style="color: #666;">🔍 Analyzing URL... This may take a minute.</p>');
+
+        $.ajax({
+            url: claudeAiScanner.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'run_advanced_scan',
+                scan_type: 'single-url',
+                url: url,
+                _ajax_nonce: claudeAiScanner.nonce,
+            },
+            success: function(response) {
+                if (response.success) {
+                    displayResults(response.data);
+                } else {
+                    $('#advanced-results').html('<div class="notice notice-error"><p>Error: ' + response.data + '</p></div>');
+                }
+                $btn.prop('disabled', false).text(originalText);
+            },
+            error: function() {
+                $('#advanced-results').html('<div class="notice notice-error"><p>Error scanning URL. Check that the URL is valid and accessible.</p></div>');
+                $btn.prop('disabled', false).text(originalText);
+            },
+        });
+    });
+
+    // Allow Enter key in URL input
+    $('#single-url-input').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            $('#scan-single-url').click();
+        }
+    });
 
     // Run scan
     $(document).on('click', '.scan-btn-adv', function(e) {

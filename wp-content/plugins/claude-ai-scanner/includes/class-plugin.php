@@ -73,6 +73,7 @@ class Claude_AI_Scanner_Plugin {
         require_once $includes_dir . 'class-link-scanner.php';
         require_once $includes_dir . 'class-seo-scanner.php';
         require_once $includes_dir . 'class-redirect-scanner.php';
+        require_once $includes_dir . 'class-single-url-scanner.php';
         require_once $includes_dir . 'class-export.php';
     }
 
@@ -100,6 +101,7 @@ class Claude_AI_Scanner_Plugin {
             '404' => 'Claude_AI_Link_Scanner',
             'seo' => 'Claude_AI_SEO_Scanner',
             'redirects' => 'Claude_AI_Redirect_Scanner',
+            'single-url' => 'Claude_AI_Single_URL_Scanner',
         ];
     }
 
@@ -210,7 +212,18 @@ class Claude_AI_Scanner_Plugin {
         }
 
         $scanner_class = $this->scanners[$scan_type];
-        $scanner = new $scanner_class($this->api_key);
+
+        // Special handling for single URL scanner
+        if ($scan_type === 'single-url') {
+            $url = isset($_POST['url']) ? sanitize_url($_POST['url']) : '';
+            if (empty($url)) {
+                wp_send_json_error('Please provide a URL');
+            }
+            $scanner = new $scanner_class($this->api_key, $url);
+        } else {
+            $scanner = new $scanner_class($this->api_key);
+        }
+
         $result = $scanner->scan();
 
         if (is_wp_error($result)) {
