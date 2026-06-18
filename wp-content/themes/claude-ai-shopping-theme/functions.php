@@ -13,9 +13,6 @@ define('CLAUDE_SHOPPING_THEME_VERSION', '1.0.0');
 define('CLAUDE_SHOPPING_THEME_DIR', get_template_directory());
 define('CLAUDE_SHOPPING_THEME_URL', get_template_directory_uri());
 
-/**
- * Theme Setup
- */
 function claude_shopping_setup() {
     add_theme_support('title-tag');
     add_theme_support('custom-logo');
@@ -32,11 +29,7 @@ function claude_shopping_setup() {
 }
 add_action('after_setup_theme', 'claude_shopping_setup');
 
-/**
- * Enqueue React App
- */
 function claude_shopping_enqueue_scripts() {
-    // Only enqueue on frontend
     if (is_admin()) {
         return;
     }
@@ -44,12 +37,9 @@ function claude_shopping_enqueue_scripts() {
     $react_build_dir = CLAUDE_SHOPPING_THEME_DIR . '/react-app/dist';
     $react_manifest = $react_build_dir . '/manifest.json';
 
-    // Check if React app is built
     if (file_exists($react_manifest)) {
-        // React app is built - enqueue compiled files
         $manifest = json_decode(file_get_contents($react_manifest), true);
 
-        // Main JS file - look for index.html entry (Vite's default entry point)
         if (isset($manifest['index.html']['file'])) {
             wp_enqueue_script(
                 'claude-shopping-react',
@@ -59,7 +49,6 @@ function claude_shopping_enqueue_scripts() {
                 true
             );
 
-            // Pass WordPress data to React
             wp_localize_script('claude-shopping-react', 'claudeShoppingTheme', [
                 'apiUrl' => rest_url('wc/v3'),
                 'siteUrl' => site_url(),
@@ -69,7 +58,6 @@ function claude_shopping_enqueue_scripts() {
             ]);
         }
 
-        // Main CSS file
         if (isset($manifest['index.html']['css']) && is_array($manifest['index.html']['css'])) {
             foreach ($manifest['index.html']['css'] as $css_file) {
                 wp_enqueue_style(
@@ -80,18 +68,8 @@ function claude_shopping_enqueue_scripts() {
                 );
             }
         }
-    } else {
-        // React app not built yet - show setup message
-        wp_enqueue_script(
-            'claude-shopping-setup-notice',
-            CLAUDE_SHOPPING_THEME_URL . '/assets/setup-notice.js',
-            [],
-            CLAUDE_SHOPPING_THEME_VERSION,
-            true
-        );
     }
 
-    // Theme stylesheet
     wp_enqueue_style(
         'claude-shopping-theme',
         CLAUDE_SHOPPING_THEME_URL . '/style.css',
@@ -108,10 +86,6 @@ function claude_shopping_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'claude_shopping_enqueue_scripts');
 
-/**
- * Disable WooCommerce default frontend scripts
- * (React app will handle all frontend)
- */
 function claude_shopping_disable_woo_assets() {
     if (function_exists('wp_dequeue_script')) {
         wp_dequeue_script('wc-add-to-cart');
@@ -122,8 +96,241 @@ function claude_shopping_disable_woo_assets() {
 add_action('wp_enqueue_scripts', 'claude_shopping_disable_woo_assets', 100);
 
 /**
- * Register image sizes for products
+ * REST API for Products, Cart, and Checkout
  */
+function claude_shopping_rest_api_init() {
+    // Public products endpoint
+    register_rest_route('claude-shopping/v1', '/products', [
+        'methods' => 'GET',
+        'callback' => 'claude_shopping_get_products',
+        'permission_callback' => '__return_true',
+    ]);
+
+    // Cart endpoint
+    register_rest_route('claude-shopping/v1', '/cart', [
+        'methods' => 'POST',
+        'callback' => 'claude_shopping_handle_cart',
+        'permission_callback' => function(\WP_REST_Request $request) {
+            $nonce = $request->get_header('X-WP-Nonce');
+            return $nonce && wp_verify_nonce($nonce, 'wp_rest');
+        },
+    ]);
+
+    // Checkout endpoint
+    register_rest_route('claude-shopping/v1', '/checkout', [
+        'methods' => 'POST',
+        'callback' => 'claude_shopping_process_checkout',
+        'permission_callback' => function(\WP_REST_Request $request) {
+            $nonce = $request->get_header('X-WP-Nonce');
+            return $nonce && wp_verify_nonce($nonce, 'wp_rest');
+        },
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_rest_api_init');
+
+function claude_shopping_get_products(\WP_REST_Request $request) {
+    if (!class_exists('WC_Product')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+
+    $per_page = intval($request->get_param('per_page')) ?? 12;
+    $category = intval($request->get_param('category') ?? 0);
+    $min_price = floatval($request->get_param('min_price') ?? 0);
+    $max_price = floatval($request->get_param('max_price') ?? 9999999);
+    $orderby = sanitize_text_field($request->get_param('orderby') ?? 'date');
+    $order = sanitize_text_field($request->get_param('order') ?? 'desc');
+
+    $args = [
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'posts_per_page' => $per_page,
+        'orderby' => $orderby,
+        'order' => $order,
+    ];
+
+    if ($category > 0) {
+        $args['tax_query'] = [
+            ['taxonomy' => 'product_cat', 'field' => 'term_id', 'terms' => $category],
+        ];
+    }
+
+    if ($min_price > 0 || $max_price < 9999999) {
+        $args['meta_query'] = [
+            ['key' => '_price', 'value' => [$min_price, $max_price], 'compare' => 'BETWEEN', 'type' => 'DECIMAL(10, 2)'],
+        ];
+    }
+
+    $query = new WP_Query($args);
+    $products = [];
+
+    foreach ($query->posts as $post) {
+        $product = wc_get_product($post->ID);
+        if (!$product) continue;
+
+        $in_stock = $product->get_stock_status() === 'instock' && ($product->get_stock_quantity() === null || $product->get_stock_quantity() > 0);
+
+        $product_data = [
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'description' => wp_strip_all_tags($product->get_description()),
+            'price' => $product->get_price(),
+            'regular_price' => $product->get_regular_price(),
+            'sku' => $product->get_sku(),
+            'stock_status' => $product->get_stock_status(),
+            'stock_quantity' => $product->get_stock_quantity() ?? 0,
+            'in_stock' => $in_stock,
+            'image' => wp_get_attachment_url($product->get_image_id()),
+            'type' => $product->get_type(),
+            'permalink' => $product->get_permalink(),
+        ];
+
+        if ($product->is_type('variable')) {
+            $variations = [];
+            foreach ($product->get_children() as $variation_id) {
+                $variation = wc_get_product($variation_id);
+                if ($variation) {
+                    $variations[] = [
+                        'id' => $variation->get_id(),
+                        'attributes' => $variation->get_attributes(),
+                        'price' => $variation->get_price(),
+                        'stock_quantity' => $variation->get_stock_quantity(),
+                    ];
+                }
+            }
+            $product_data['variations'] = $variations;
+        }
+
+        $products[] = $product_data;
+    }
+
+    return $products;
+}
+
+function claude_shopping_handle_cart(\WP_REST_Request $request) {
+    $action = $request->get_param('action');
+    switch ($action) {
+        case 'add':
+            return claude_shopping_add_to_cart($request);
+        case 'update':
+            return claude_shopping_update_cart($request);
+        case 'remove':
+            return claude_shopping_remove_from_cart($request);
+        case 'get':
+            return claude_shopping_get_cart();
+        default:
+            return new \WP_Error('invalid_action', 'Invalid cart action', ['status' => 400]);
+    }
+}
+
+function claude_shopping_get_cart() {
+    if (!class_exists('WC_Cart')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+    $cart = WC()->cart;
+    return [
+        'items' => array_map(function ($item) {
+            return [
+                'key' => $item['key'],
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'total' => $item['line_total'],
+                'product_name' => $item['data']->get_name(),
+                'product_image' => wp_get_attachment_url($item['data']->get_image_id()),
+                'price' => $item['data']->get_price(),
+            ];
+        }, $cart->get_cart()),
+        'total' => $cart->get_cart_total(),
+        'count' => $cart->get_cart_contents_count(),
+    ];
+}
+
+function claude_shopping_add_to_cart(\WP_REST_Request $request) {
+    if (!class_exists('WC_Cart')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+    $product_id = intval($request->get_param('product_id'));
+    $quantity = intval($request->get_param('quantity') ?? 1);
+    if (!$product_id) {
+        return new \WP_Error('missing_product_id', 'Product ID is required', ['status' => 400]);
+    }
+    WC()->cart->add_to_cart($product_id, $quantity);
+    return claude_shopping_get_cart();
+}
+
+function claude_shopping_update_cart(\WP_REST_Request $request) {
+    if (!class_exists('WC_Cart')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+    $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
+    $quantity = intval($request->get_param('quantity'));
+    if (!$cart_item_key) {
+        return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+    }
+    WC()->cart->set_quantity($cart_item_key, $quantity);
+    return claude_shopping_get_cart();
+}
+
+function claude_shopping_remove_from_cart(\WP_REST_Request $request) {
+    if (!class_exists('WC_Cart')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+    $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
+    if (!$cart_item_key) {
+        return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+    }
+    WC()->cart->remove_cart_item($cart_item_key);
+    return claude_shopping_get_cart();
+}
+
+function claude_shopping_process_checkout(\WP_REST_Request $request) {
+    if (!class_exists('WC_Cart') || !class_exists('WC_Order')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+    $params = $request->get_json_params();
+    $required_fields = ['firstName', 'lastName', 'email', 'address', 'city', 'zip', 'country'];
+    foreach ($required_fields as $field) {
+        if (empty($params[$field])) {
+            return new \WP_Error('missing_field', "Missing required field: {$field}", ['status' => 400]);
+        }
+    }
+    try {
+        $cart = WC()->cart;
+        if ($cart->is_empty()) {
+            return new \WP_Error('empty_cart', 'Cart is empty', ['status' => 400]);
+        }
+        $order = wc_create_order(['status' => 'pending']);
+        $order->set_billing_first_name(sanitize_text_field($params['firstName']));
+        $order->set_billing_last_name(sanitize_text_field($params['lastName']));
+        $order->set_billing_email(sanitize_email($params['email']));
+        $order->set_billing_phone(sanitize_text_field($params['phone'] ?? ''));
+        $order->set_billing_address_1(sanitize_text_field($params['address']));
+        $order->set_billing_city(sanitize_text_field($params['city']));
+        $order->set_billing_state(sanitize_text_field($params['state'] ?? ''));
+        $order->set_billing_postcode(sanitize_text_field($params['zip']));
+        $order->set_billing_country(sanitize_text_field($params['country']));
+        $order->set_shipping_first_name($order->get_billing_first_name());
+        $order->set_shipping_last_name($order->get_billing_last_name());
+        $order->set_shipping_address_1($order->get_billing_address_1());
+        $order->set_shipping_city($order->get_billing_city());
+        $order->set_shipping_state($order->get_billing_state());
+        $order->set_shipping_postcode($order->get_billing_postcode());
+        $order->set_shipping_country($order->get_billing_country());
+        foreach ($cart->get_cart() as $cart_item) {
+            $order->add_product($cart_item['data'], $cart_item['quantity']);
+        }
+        $order->calculate_totals();
+        $cart->empty_cart();
+        return [
+            'success' => true,
+            'order_id' => $order->get_id(),
+            'order_number' => $order->get_order_number(),
+            'message' => 'Order created successfully',
+        ];
+    } catch (\Exception $e) {
+        return new \WP_Error('checkout_error', $e->getMessage(), ['status' => 500]);
+    }
+}
+
 function claude_shopping_register_image_sizes() {
     add_image_size('claude-shopping-product-thumbnail', 300, 300, true);
     add_image_size('claude-shopping-product-single', 600, 600, true);
@@ -131,16 +338,8 @@ function claude_shopping_register_image_sizes() {
 }
 add_action('after_setup_theme', 'claude_shopping_register_image_sizes');
 
-/**
- * Process checkout and create WooCommerce order
- */
- * Remove WooCommerce default sidebar
- */
 remove_action('woocommerce_sidebar', 'woocommerce_get_sidebar', 10);
 
-/**
- * Admin page for generating demo products
- */
 add_action('admin_menu', function() {
     add_submenu_page(
         'woocommerce',
@@ -169,56 +368,25 @@ function claude_shopping_admin_generate_products_page() {
     ?>
     <div class="wrap">
         <h1>Generate Demo Products</h1>
-
         <div style="background: white; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <h2>Create Sample Products</h2>
-            <p>This will create demo WooCommerce products for testing the shopping theme:</p>
-
-            <h3>What Will Be Created:</h3>
+            <p>This will create demo WooCommerce products for testing:</p>
             <ul style="list-style: none; padding-left: 0; line-height: 1.8;">
-                <li><strong>Simple Products (5):</strong></li>
-                <ul style="margin-left: 20px;">
-                    <li>✓ Wireless Bluetooth Headphones</li>
-                    <li>✓ USB-C Fast Charging Cable</li>
-                    <li>✓ Portable Power Bank 20000mAh</li>
-                    <li>✓ Premium Laptop Stand</li>
-                    <li>✓ Desk Lamp LED - Dimmable</li>
-                </ul>
-
-                <li style="margin-top: 15px;"><strong>Variable Products (3):</strong></li>
-                <ul style="margin-left: 20px;">
-                    <li>✓ Wireless Mouse (Colors: Black, Silver, White)</li>
-                    <li>✓ Mechanical Gaming Keyboard (Switches: Blue, Brown, Red)</li>
-                    <li>✓ Phone Screen Protector Pack (Packs: 2, 3, 5)</li>
-                </ul>
-
-                <li style="margin-top: 15px;"><strong>Total: 13 Products</strong></li>
+                <li><strong>Simple Products (5):</strong> Headphones, Cable, Power Bank, Laptop Stand, Lamp</li>
+                <li><strong>Variable Products (3):</strong> Mouse (colors), Keyboard (switches), Screen Protector (packs)</li>
+                <li><strong>Total: 13 Products</strong></li>
             </ul>
-
             <form method="post" style="margin-top: 20px;">
                 <?php wp_nonce_field('generate_products_nonce'); ?>
                 <button type="submit" name="generate_products" class="button button-primary button-large">
                     ✨ Generate Demo Products
                 </button>
             </form>
-
-            <hr style="margin: 30px 0;">
-
-            <h3>After Creating Products:</h3>
-            <ol style="padding-left: 20px;">
-                <li>Click the button above</li>
-                <li>Products will be created in your store</li>
-                <li>Go to <a href="<?php echo home_url(); ?>" target="_blank">your storefront</a> and refresh</li>
-                <li>You should see all products displayed!</li>
-            </ol>
         </div>
     </div>
     <?php
 }
 
-/**
- * REST endpoint to generate demo products
- */
 function claude_shopping_rest_generate_products() {
     register_rest_route('claude-shopping/v1', '/generate-products', [
         'methods' => 'POST',
@@ -230,104 +398,24 @@ function claude_shopping_rest_generate_products() {
 }
 add_action('rest_api_init', 'claude_shopping_rest_generate_products');
 
-/**
- * Generate simple and variable products
- */
 function claude_shopping_generate_demo_products() {
     if (!class_exists('WC_Product_Simple')) {
         return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
     }
 
-    // Simple products
     $simple_products = [
-        [
-            'name' => 'Wireless Bluetooth Headphones',
-            'description' => 'Premium wireless headphones with active noise cancellation, 30-hour battery life, and crystal-clear sound quality.',
-            'price' => 129.99,
-            'regular_price' => 149.99,
-            'category' => 'Electronics',
-            'sku' => 'HEADPHONES-001',
-            'stock' => 50,
-        ],
-        [
-            'name' => 'USB-C Fast Charging Cable',
-            'description' => '6ft premium USB-C charging cable with 100W power delivery. Supports fast charging for laptops, tablets, and phones.',
-            'price' => 19.99,
-            'regular_price' => 24.99,
-            'category' => 'Electronics',
-            'sku' => 'USB-C-CABLE',
-            'stock' => 200,
-        ],
-        [
-            'name' => 'Portable Power Bank 20000mAh',
-            'description' => 'High-capacity power bank with dual USB ports and LED display. Charges your phone 5+ times.',
-            'price' => 34.99,
-            'regular_price' => 44.99,
-            'category' => 'Electronics',
-            'sku' => 'POWERBANK-20K',
-            'stock' => 75,
-        ],
-        [
-            'name' => 'Premium Laptop Stand',
-            'description' => 'Adjustable aluminum laptop stand for ergonomic workspace setup. Compatible with all laptops up to 17 inches.',
-            'price' => 49.99,
-            'regular_price' => 59.99,
-            'category' => 'Office',
-            'sku' => 'LAPTOP-STAND',
-            'stock' => 60,
-        ],
-        [
-            'name' => 'Desk Lamp LED - Dimmable',
-            'description' => 'LED desk lamp with 5 brightness levels and USB charging port. Energy-efficient with long-lasting LED bulb.',
-            'price' => 39.99,
-            'regular_price' => 49.99,
-            'category' => 'Office',
-            'sku' => 'DESK-LAMP-LED',
-            'stock' => 80,
-        ],
+        ['name' => 'Wireless Bluetooth Headphones', 'price' => 129.99, 'regular_price' => 149.99, 'category' => 'Electronics', 'sku' => 'HEADPHONES-001', 'stock' => 50],
+        ['name' => 'USB-C Fast Charging Cable', 'price' => 19.99, 'regular_price' => 24.99, 'category' => 'Electronics', 'sku' => 'USB-C-CABLE', 'stock' => 200],
+        ['name' => 'Portable Power Bank 20000mAh', 'price' => 34.99, 'regular_price' => 44.99, 'category' => 'Electronics', 'sku' => 'POWERBANK-20K', 'stock' => 75],
+        ['name' => 'Premium Laptop Stand', 'price' => 49.99, 'regular_price' => 59.99, 'category' => 'Office', 'sku' => 'LAPTOP-STAND', 'stock' => 60],
+        ['name' => 'Desk Lamp LED - Dimmable', 'price' => 39.99, 'regular_price' => 49.99, 'category' => 'Office', 'sku' => 'DESK-LAMP-LED', 'stock' => 80],
     ];
 
-    // Variable products
     $variable_products = [
-        [
-            'name' => 'Wireless Mouse - Ergonomic',
-            'description' => 'Ergonomic wireless mouse with precision tracking and 2-year battery life.',
-            'category' => 'Electronics',
-            'sku' => 'MOUSE-ERGONOMIC',
-            'attributes' => ['color' => ['Black', 'Silver', 'White']],
-            'variations' => [
-                ['sku' => 'MOUSE-BLACK', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'Black']],
-                ['sku' => 'MOUSE-SILVER', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'Silver']],
-                ['sku' => 'MOUSE-WHITE', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'White']],
-            ],
-        ],
-        [
-            'name' => 'Mechanical Gaming Keyboard',
-            'description' => 'RGB mechanical keyboard with customizable switches and aluminum frame.',
-            'category' => 'Electronics',
-            'sku' => 'KEYBOARD-GAMING',
-            'attributes' => ['switch_type' => ['Blue', 'Brown', 'Red']],
-            'variations' => [
-                ['sku' => 'KEYBOARD-BLUE', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Blue']],
-                ['sku' => 'KEYBOARD-BROWN', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Brown']],
-                ['sku' => 'KEYBOARD-RED', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Red']],
-            ],
-        ],
-        [
-            'name' => 'Phone Screen Protector Pack',
-            'description' => 'Pack of tempered glass screen protectors with easy-apply technology.',
-            'category' => 'Electronics',
-            'sku' => 'SCREEN-PROTECTOR',
-            'attributes' => ['quantity' => ['2 Pack', '3 Pack', '5 Pack']],
-            'variations' => [
-                ['sku' => 'PROTECTOR-2PACK', 'price' => 9.99, 'regular_price' => 12.99, 'stock' => 300, 'attribute' => ['quantity' => '2 Pack']],
-                ['sku' => 'PROTECTOR-3PACK', 'price' => 12.99, 'regular_price' => 16.99, 'stock' => 300, 'attribute' => ['quantity' => '3 Pack']],
-                ['sku' => 'PROTECTOR-5PACK', 'price' => 19.99, 'regular_price' => 24.99, 'stock' => 200, 'attribute' => ['quantity' => '5 Pack']],
-            ],
-        ],
+        ['name' => 'Wireless Mouse - Ergonomic', 'category' => 'Electronics', 'sku' => 'MOUSE-ERGONOMIC', 'attributes' => ['color' => ['Black', 'Silver', 'White']], 'variations' => [['sku' => 'MOUSE-BLACK', 'price' => 24.99, 'stock' => 100], ['sku' => 'MOUSE-SILVER', 'price' => 24.99, 'stock' => 100], ['sku' => 'MOUSE-WHITE', 'price' => 24.99, 'stock' => 100]]],
+        ['name' => 'Mechanical Gaming Keyboard', 'category' => 'Electronics', 'sku' => 'KEYBOARD-GAMING', 'attributes' => ['switch_type' => ['Blue', 'Brown', 'Red']], 'variations' => [['sku' => 'KEYBOARD-BLUE', 'price' => 89.99, 'stock' => 40], ['sku' => 'KEYBOARD-BROWN', 'price' => 89.99, 'stock' => 40], ['sku' => 'KEYBOARD-RED', 'price' => 89.99, 'stock' => 40]]],
     ];
 
-    // Get or create categories
     $categories = [];
     foreach (['Electronics', 'Office'] as $cat_name) {
         $cat = get_term_by('name', $cat_name, 'product_cat');
@@ -339,119 +427,64 @@ function claude_shopping_generate_demo_products() {
     }
 
     $simple_count = 0;
-    $variable_count = 0;
-
-    // Create simple products
-    foreach ($simple_products as $product_data) {
-        $existing = get_posts([
-            'post_type' => 'product',
-            'meta_key' => '_sku',
-            'meta_value' => $product_data['sku'],
-        ]);
-
-        if (!empty($existing)) {
-            continue;
-        }
-
+    foreach ($simple_products as $pd) {
+        $existing = get_posts(['post_type' => 'product', 'meta_key' => '_sku', 'meta_value' => $pd['sku']]);
+        if (!empty($existing)) continue;
         $product = new WC_Product_Simple();
-        $product->set_name($product_data['name']);
-        $product->set_description($product_data['description']);
-        $product->set_price($product_data['price']);
-        $product->set_regular_price($product_data['regular_price']);
-        $product->set_sku($product_data['sku']);
-        $product->set_stock($product_data['stock']);
+        $product->set_name($pd['name']);
+        $product->set_price($pd['price']);
+        $product->set_regular_price($pd['regular_price']);
+        $product->set_sku($pd['sku']);
+        $product->set_stock($pd['stock']);
         $product->set_manage_stock(true);
+        $product->set_stock_status('instock');
         $product->set_status('publish');
-
-        if (isset($categories[$product_data['category']])) {
-            $product->set_category_ids([$categories[$product_data['category']]]);
-        }
-
+        $product->set_category_ids([$categories[$pd['category']]]);
         $product->save();
         $simple_count++;
     }
 
-    // Create variable products
-    foreach ($variable_products as $product_data) {
-        $existing = get_posts([
-            'post_type' => 'product',
-            'meta_key' => '_sku',
-            'meta_value' => $product_data['sku'],
-        ]);
-
-        if (!empty($existing)) {
-            continue;
-        }
-
+    $variable_count = 0;
+    foreach ($variable_products as $pd) {
+        $existing = get_posts(['post_type' => 'product', 'meta_key' => '_sku', 'meta_value' => $pd['sku']]);
+        if (!empty($existing)) continue;
         $product = new WC_Product_Variable();
-        $product->set_name($product_data['name']);
-        $product->set_description($product_data['description']);
-        $product->set_sku($product_data['sku']);
+        $product->set_name($pd['name']);
+        $product->set_sku($pd['sku']);
         $product->set_status('publish');
-
-        if (isset($categories[$product_data['category']])) {
-            $product->set_category_ids([$categories[$product_data['category']]]);
-        }
-
-        // Register attributes
+        $product->set_category_ids([$categories[$pd['category']]]);
         $attributes = [];
-        foreach ($product_data['attributes'] as $attr_name => $attr_values) {
-            $attr = wc_get_attribute(wc_attribute_taxonomy_to_name($attr_name));
-            if (!$attr) {
-                $attr_id = wc_create_attribute([
-                    'name' => ucfirst(str_replace('_', ' ', $attr_name)),
-                    'slug' => $attr_name,
-                    'type' => 'select',
-                    'orderby' => 'menu_order',
-                    'has_archives' => false,
-                ]);
-            } else {
-                $attr_id = $attr->get_id();
+        foreach ($pd['attributes'] as $attr_name => $attr_values) {
+            $attr_id = wc_create_attribute(['name' => ucfirst(str_replace('_', ' ', $attr_name)), 'slug' => $attr_name, 'type' => 'select', 'orderby' => 'menu_order', 'has_archives' => false]);
+            if (!is_wp_error($attr_id)) {
+                foreach ($attr_values as $value) {
+                    wp_insert_term($value, 'pa_' . $attr_name);
+                }
+                $attribute = new WC_Product_Attribute();
+                $attribute->set_id($attr_id);
+                $attribute->set_name('pa_' . $attr_name);
+                $attribute->set_options($attr_values);
+                $attribute->set_visible(true);
+                $attribute->set_variation(true);
+                $attributes[] = $attribute;
             }
-
-            foreach ($attr_values as $value) {
-                wp_insert_term($value, 'pa_' . $attr_name, ['description' => '']);
-            }
-
-            $attribute = new WC_Product_Attribute();
-            $attribute->set_id($attr_id);
-            $attribute->set_name('pa_' . $attr_name);
-            $attribute->set_options($attr_values);
-            $attribute->set_visible(true);
-            $attribute->set_variation(true);
-
-            $attributes[] = $attribute;
         }
-
         $product->set_attributes($attributes);
         $product->save();
-
-        // Create variations
-        foreach ($product_data['variations'] as $variation_data) {
+        foreach ($pd['variations'] as $var_data) {
             $variation = new WC_Product_Variation();
             $variation->set_parent_id($product->get_id());
-            $variation->set_sku($variation_data['sku']);
-            $variation->set_price($variation_data['price']);
-            $variation->set_regular_price($variation_data['regular_price']);
-            $variation->set_stock($variation_data['stock']);
+            $variation->set_sku($var_data['sku']);
+            $variation->set_price($var_data['price']);
+            $variation->set_regular_price($var_data['price']);
+            $variation->set_stock($var_data['stock']);
             $variation->set_manage_stock(true);
+            $variation->set_stock_status('instock');
             $variation->set_status('publish');
-
-            foreach ($variation_data['attribute'] as $attr_name => $attr_value) {
-                $variation->set_attributes(['pa_' . $attr_name => $attr_value]);
-            }
-
             $variation->save();
         }
-
         $variable_count++;
     }
 
-    return [
-        'success' => true,
-        'simple_products_created' => $simple_count,
-        'variable_products_created' => $variable_count,
-        'total' => $simple_count + $variable_count,
-        'message' => "Created {$simple_count} simple products and {$variable_count} variable products",
-    ];
+    return ['success' => true, 'simple_products_created' => $simple_count, 'variable_products_created' => $variable_count, 'total' => $simple_count + $variable_count];
 }
