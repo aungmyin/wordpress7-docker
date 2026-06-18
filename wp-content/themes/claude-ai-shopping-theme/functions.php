@@ -64,7 +64,7 @@ function claude_shopping_enqueue_scripts() {
                 'apiUrl' => rest_url('wc/v3'),
                 'siteUrl' => site_url(),
                 'nonce' => wp_create_nonce('wp_rest'),
-                'restUrl' => rest_url(),
+                'restUrl' => site_url() . '/index.php/wp-json',
                 'cartNonce' => wp_create_nonce('wc_store_api'),
             ]);
         }
