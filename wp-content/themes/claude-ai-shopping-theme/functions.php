@@ -340,6 +340,35 @@ add_action('after_setup_theme', 'claude_shopping_register_image_sizes');
 
 remove_action('woocommerce_sidebar', 'woocommerce_get_sidebar', 10);
 
+/**
+ * REST Endpoint to Get Page Content by Slug
+ */
+function claude_shopping_register_page_endpoint() {
+    register_rest_route('claude-shopping/v1', '/page/(?P<slug>[a-zA-Z0-9-]+)', [
+        'methods' => 'GET',
+        'callback' => 'claude_shopping_get_page_content',
+        'permission_callback' => '__return_true',
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_register_page_endpoint');
+
+function claude_shopping_get_page_content($request) {
+    $slug = $request->get_param('slug');
+
+    $page = get_page_by_path($slug, OBJECT, 'page');
+
+    if (!$page) {
+        return new \WP_Error('page_not_found', 'Page not found', ['status' => 404]);
+    }
+
+    return [
+        'id' => $page->ID,
+        'title' => get_the_title($page->ID),
+        'content' => wp_kses_post($page->post_content),
+        'excerpt' => wp_kses_post($page->post_excerpt),
+    ];
+}
+
 add_action('admin_menu', function() {
     add_submenu_page(
         'woocommerce',
