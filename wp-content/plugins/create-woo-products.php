@@ -122,6 +122,7 @@ foreach ($simple_products as $pd) {
     $product->set_sku($pd['sku']);
     $product->set_stock($pd['stock']);
     $product->set_manage_stock(true);
+    $product->set_stock_status('instock');
     $product->set_status('publish');
     $product->set_category_ids([$categories[$pd['category']]]);
     $product->save();
@@ -187,6 +188,7 @@ foreach ($variable_products as $pd) {
         $variation->set_regular_price($variation_data['regular_price']);
         $variation->set_stock($variation_data['stock']);
         $variation->set_manage_stock(true);
+        $variation->set_stock_status('instock');
         $variation->set_status('publish');
 
         foreach ($variation_data['attribute'] as $attr_name => $attr_value) {
