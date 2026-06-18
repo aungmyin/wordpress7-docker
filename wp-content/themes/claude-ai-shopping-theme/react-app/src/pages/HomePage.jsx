@@ -1,168 +1,201 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useCart'
 
 export default function HomePage() {
-  const [sortBy, setSortBy] = useState('date')
-  const [filterPrice, setFilterPrice] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
+  const [page, setPage] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const params = {
-    orderby: sortBy === 'price-asc' ? 'price' : sortBy === 'price-desc' ? 'price' : 'date',
-    order: sortBy === 'price-asc' ? 'asc' : 'desc',
+  const { products, loading: productsLoading } = useProducts({ per_page: 8 })
+
+  useEffect(() => {
+    const fetchPage = async () => {
+      try {
+        const response = await fetch(
+          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/claude-shopping/v1/page/home`
+        )
+        if (!response.ok) {
+          throw new Error('Home page not found')
+        }
+        const data = await response.json()
+        setPage(data)
+      } catch (err) {
+        setError(err.message)
+        console.error('Error fetching home page:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPage()
+  }, [])
+
+  // Extract first paragraph as subtitle
+  const getSubtitle = (content) => {
+    const match = content.match(/<p>(.*?)<\/p>/)
+    return match ? match[1] : ''
   }
 
-  // Add category filter
-  if (filterCategory) {
-    params.category = filterCategory
+  // Extract main heading as title
+  const getTitle = (content) => {
+    const match = content.match(/<h1>(.*?)<\/h1>/)
+    return match ? match[1] : 'Welcome'
   }
 
-  // Add price filter
-  if (filterPrice === 'under-50') {
-    params.min_price = 0
-    params.max_price = 50
-  } else if (filterPrice === '50-100') {
-    params.min_price = 50
-    params.max_price = 100
-  } else if (filterPrice === 'over-100') {
-    params.min_price = 100
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    )
   }
 
-  const { products, loading, error } = useProducts(params)
+  const homeTitle = page ? getTitle(page.content) : 'Welcome to Claude AI Shopping'
+  const homeSubtitle = page ? getSubtitle(page.content) : 'Discover amazing products'
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+      {/* Hero Banner - Editable from WordPress */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl font-bold mb-4">Welcome to Claude AI Shopping</h1>
-          <p className="text-xl text-blue-100">
-            Discover amazing products with AI-powered recommendations
-          </p>
+          <div className="text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              {homeTitle}
+            </h1>
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              {homeSubtitle}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/"
+                className="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition"
+              >
+                Shop Now
+              </Link>
+              <Link
+                to="/about"
+                className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              >
+                Learn More
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Filters & Sorting */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Sort By */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="date">Newest</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
-            </select>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Features Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Premium Quality</h3>
+            <p className="text-gray-600">Carefully curated products that meet our high standards</p>
           </div>
 
-          {/* Price Filter */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Price Range
-            </label>
-            <select
-              value={filterPrice}
-              onChange={(e) => setFilterPrice(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Prices</option>
-              <option value="under-50">Under $50</option>
-              <option value="50-100">$50 - $100</option>
-              <option value="over-100">Over $100</option>
-            </select>
+          <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Best Prices</h3>
+            <p className="text-gray-600">Competitive pricing with frequent discounts and deals</p>
           </div>
 
-          {/* Category Filter */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Categories</option>
-              <option value="electronics">Electronics</option>
-              <option value="clothing">Clothing</option>
-              <option value="books">Books</option>
-              <option value="home">Home & Garden</option>
-            </select>
+          <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Expert Support</h3>
+            <p className="text-gray-600">Dedicated customer support ready to help anytime</p>
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin">
-              <svg
-                className="w-12 h-12 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </div>
-            <p className="ml-4 text-gray-600">Loading products...</p>
-          </div>
-        )}
+        {/* Featured Products Section */}
+        <div className="mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-2 text-center">Featured Products</h2>
+          <p className="text-gray-600 text-center mb-12">Discover our best-selling items</p>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-8">
-            <p className="font-semibold">Error loading products</p>
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Products Grid */}
-        {!loading && products.length > 0 && (
-          <>
-            <div className="text-gray-600 mb-6">
-              Showing {products.length} products
+          {productsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Loading products...</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No products available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </>
-        )}
+          )}
 
-        {/* Empty State */}
-        {!loading && products.length === 0 && (
-          <div className="text-center py-16">
-            <svg
-              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="text-center">
+            <Link
+              to="/"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
-            <h3 className="text-xl font-semibold text-gray-700">No products found</h3>
-            <p className="text-gray-500 mt-2">Try adjusting your filters</p>
+              View All Products
+            </Link>
           </div>
-        )}
+        </div>
+
+        {/* Categories Section */}
+        <div className="bg-white rounded-lg shadow-md p-12 mb-16">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Shop by Category</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Link
+              to="/category/17"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-8 rounded-lg text-center transition transform hover:scale-105"
+            >
+              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <h3 className="text-2xl font-bold">Electronics</h3>
+              <p className="text-blue-100 mt-2">Laptops, phones, accessories</p>
+            </Link>
+
+            <Link
+              to="/category/18"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-8 rounded-lg text-center transition transform hover:scale-105"
+            >
+              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-2xl font-bold">Office</h3>
+              <p className="text-green-100 mt-2">Desks, lamps, organizers</p>
+            </Link>
+          </div>
+        </div>
+
+        {/* Newsletter Section */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg shadow-md p-12 text-center">
+          <h2 className="text-3xl font-bold mb-4">Stay Updated</h2>
+          <p className="text-lg mb-6 max-w-2xl mx-auto">
+            Subscribe to our newsletter for exclusive deals and new product announcements
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-3 rounded-lg text-gray-800 focus:outline-none"
+            />
+            <button className="bg-white text-purple-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-lg transition">
+              Subscribe
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

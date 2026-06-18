@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<!-- saved from url=(0022)http://localhost:8000/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home — Global B2B Marketplace</title>
+    <meta name="description" content="ShopSail is a global B2B marketplace connecting buyers with verified suppliers. Source products directly with competitive pricing and global shipping.">
+    <meta name="keywords" content="B2B marketplace, wholesale, supplier, verified, global shipping, manufacturing">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="http://localhost:8000/">
+    <meta property="og:title" content="Home">
+    <meta property="og:description" content="Global B2B marketplace for sourcing products">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://localhost:8000">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link href="./Home — Global B2B Marketplace_files/css2" rel="stylesheet">
+    <script type="module" src="./Home — Global B2B Marketplace_files/client"></script><link rel="stylesheet" href="./Home — Global B2B Marketplace_files/app.css"><script type="module" src="./Home — Global B2B Marketplace_files/app.js"></script>    <style>
+        body { font-family: 'DM Sans', sans-serif; }
+        .product-card:hover { border-color: #e62e04; }
+        .cat-menu-item:hover { background: #fff5f3; color: #e62e04; }
+        .mobile-menu { display: none; }
+        .mobile-menu.open { display: block; }
+    </style>
+<style></style></head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Top bar -->
+    <div class="hidden md:flex bg-brand text-white text-xs py-1.5 px-4 items-center justify-between">
+        <div class="flex items-center gap-5">
+            <span class="opacity-90">Ship to: <strong>Worldwide</strong> ▾</span>
+                            <span class="opacity-90 cursor-pointer hover:opacity-100">Become a supplier</span>
+                    </div>
+    </div>
+
+    <!-- Main nav -->
+    <nav class="bg-white border-b border-gray-200 px-3 md:px-4 py-2.5 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-screen-xl mx-auto flex items-center gap-2 md:gap-3">
+            <a href="http://localhost:8000/" class="text-lg md:text-xl font-display text-brand whitespace-nowrap mr-1 md:mr-2 tracking-tight flex-shrink-0">
+                shop<span class="text-gold">•</span>sail
+            </a>
+
+            <a href="http://localhost:8000/categories" class="hidden md:flex items-center gap-2 border-2 border-brand rounded-lg px-3 py-1.5 text-sm text-brand whitespace-nowrap font-medium flex-shrink-0">
+                ☰ All categories
+            </a>
+
+            <div class="flex flex-1 h-9 min-w-0">
+                <form action="http://localhost:8000/search" method="GET" class="flex flex-1 min-w-0">
+                    <input type="text" name="q" placeholder="Search products…" class="flex-1 border-2 border-brand rounded-l-lg px-3 text-sm outline-none bg-white min-w-0">
+                    <button type="submit" class="bg-brand text-white px-3 md:px-4 text-sm rounded-r-lg flex items-center gap-1 font-medium hover:bg-brand-dark transition-colors flex-shrink-0">
+                        <span>🔍</span><span class="hidden sm:inline">Search</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="flex items-center gap-0 ml-1">
+                                    <a href="http://localhost:8000/login" class="hidden sm:flex flex-col items-center gap-0.5 px-2 md:px-3 py-1.5 rounded-lg hover:bg-gray-50">
+                        <span class="text-base md:text-lg">👤</span>
+                        <span class="text-[10px] md:text-xs text-gray-400">Login</span>
+                    </a>
+                
+                <a href="http://localhost:8000/cart" class="relative flex flex-col items-center gap-0.5 px-2 md:px-3 py-1.5 rounded-lg hover:bg-gray-50">
+                    <span class="text-base md:text-lg">🛒</span>
+                                        <span class="text-[10px] md:text-xs text-gray-400">Cart</span>
+                </a>
+
+                
+                <button id="menu-btn" class="sm:hidden ml-1 p-2 rounded-lg hover:bg-gray-50 text-gray-600" onclick="toggleMenu()">☰</button>
+            </div>
+        </div>
+
+        <!-- Mobile dropdown menu -->
+        <div id="mobile-menu" class="mobile-menu sm:hidden bg-white border-t border-gray-100 mt-2 -mx-3 px-4 pb-3 space-y-2">
+            <a href="http://localhost:8000/categories" class="block text-sm text-gray-700 py-2 border-b border-gray-50">☰ All categories</a>
+                            <a href="http://localhost:8000/login" class="block text-sm text-gray-700 py-2 border-b border-gray-50">👤 Login</a>
+                <a href="http://localhost:8000/register" class="block text-sm text-gray-700 py-2">📝 Register</a>
+                    </div>
+    </nav>
+
+    <!-- Sub nav (category tabs) -->
+    <div class="bg-white border-b border-gray-100 px-3 md:px-4 overflow-x-auto">
+        <div class="max-w-screen-xl mx-auto flex items-center min-w-max md:min-w-0">
+            <a href="http://localhost:8000/" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-brand text-brand font-medium whitespace-nowrap cursor-pointer">Home</a>
+                            <a href="http://localhost:8000/category/electronics" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Electronics
+                </a>
+                            <a href="http://localhost:8000/category/clothing" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Clothing
+                </a>
+                            <a href="http://localhost:8000/category/books" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Books
+                </a>
+                            <a href="http://localhost:8000/category/home-garden" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Home &amp; Garden
+                </a>
+                            <a href="http://localhost:8000/category/sports" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Sports
+                </a>
+                            <a href="http://localhost:8000/category/cakes" class="text-xs px-2.5 md:px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap cursor-pointer hover:text-brand">
+                    Cakes
+                </a>
+                    </div>
+    </div>
+
+    <!-- Flash messages -->
+    
+    
+    <!-- Main content -->
+    <main class="px-3 md:px-4 py-4 max-w-screen-xl mx-auto">
+        
+<!-- Hero: mobile = stacked, desktop = 3-col grid -->
+<div class="flex flex-col md:grid md:grid-cols-[180px_1fr_148px] gap-3 mb-3">
+
+    <!-- Category sidebar (hidden on mobile) -->
+    <div class="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <a href="http://localhost:8000/category/electronics" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-brand font-medium bg-brand-light border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Electronics</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+                <a href="http://localhost:8000/category/clothing" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Clothing</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+                <a href="http://localhost:8000/category/books" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Books</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+                <a href="http://localhost:8000/category/home-garden" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Home &amp; Garden</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+                <a href="http://localhost:8000/category/sports" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Sports</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+                <a href="http://localhost:8000/category/cakes" class="cat-menu-item flex items-center justify-between px-3 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer block hover:bg-brand-light hover:text-brand transition-colors">
+            <span>📦 Cakes</span><span class="text-gray-400 text-xs">›</span>
+        </a>
+            </div>
+
+    <!-- Hero banner -->
+    <div class="bg-brand-light border border-brand-mid rounded-xl px-4 md:px-6 py-5 flex flex-col justify-between min-h-[200px] md:min-h-[264px]">
+        <div>
+            <span class="bg-brand text-white text-[10px] px-2.5 py-0.5 rounded-full font-medium mb-3 inline-block">Global trade fair 2025</span>
+            <h1 class="font-display text-2xl md:text-3xl text-gray-900 leading-tight">Source smarter.<br>Ship faster.</h1>
+            <p class="text-xs md:text-sm text-red-800 mt-2">Direct from verified manufacturers · MOQ as low as 1 unit</p>
+            <a href="http://localhost:8000/categories" class="inline-block bg-brand text-white text-sm px-5 py-2 rounded-lg mt-4 font-medium hover:bg-brand-dark transition-colors">
+                Start sourcing →
+            </a>
+        </div>
+        <div class="flex gap-6 md:gap-8 mt-5">
+            <div class="text-center">
+                <div class="text-xl md:text-2xl font-semibold text-brand">200K+</div>
+                <div class="text-[10px] text-red-700">Suppliers</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xl md:text-2xl font-semibold text-brand">40M+</div>
+                <div class="text-[10px] text-red-700">Products</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xl md:text-2xl font-semibold text-brand">190+</div>
+                <div class="text-[10px] text-red-700">Countries</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side promo cards (row on mobile, column on desktop) -->
+    <div class="flex flex-row md:flex-col gap-2">
+        <div class="promo-card flex-1 bg-white border border-gray-200 rounded-xl p-2.5 md:p-3 cursor-pointer transition-colors hover:border-brand-mid">
+            <div class="text-xl md:text-2xl mb-1">🚢</div>
+            <div class="text-xs font-medium text-gray-800">Trade assurance</div>
+            <div class="hidden md:block text-[11px] text-gray-500 mt-0.5">Order protection on every purchase</div>
+            <div class="text-[11px] text-brand mt-1.5 font-medium">Learn more ›</div>
+        </div>
+        <div class="promo-card flex-1 bg-white border border-gray-200 rounded-xl p-2.5 md:p-3 cursor-pointer transition-colors hover:border-brand-mid">
+            <div class="text-xl md:text-2xl mb-1">🏷️</div>
+            <div class="text-xs font-medium text-gray-800">Bulk discounts</div>
+            <div class="hidden md:block text-[11px] text-gray-500 mt-0.5">Up to 40% off large orders</div>
+            <div class="text-[11px] text-brand mt-1.5 font-medium">View deals ›</div>
+        </div>
+        <div class="promo-card flex-1 bg-white border border-gray-200 rounded-xl p-2.5 md:p-3 cursor-pointer transition-colors hover:border-brand-mid">
+            <div class="text-xl md:text-2xl mb-1">🔍</div>
+            <div class="text-xs font-medium text-gray-800">RFQ service</div>
+            <div class="hidden md:block text-[11px] text-gray-500 mt-0.5">Quotes from multiple suppliers</div>
+            <div class="text-[11px] text-brand mt-1.5 font-medium">Submit RFQ ›</div>
+        </div>
+    </div>
+</div>
+
+<!-- Trust bar -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
+    <div class="bg-white border border-gray-200 rounded-xl px-3 md:px-4 py-3 flex items-center gap-2 md:gap-3">
+        <span class="text-xl md:text-2xl text-brand flex-shrink-0">🛡️</span>
+        <div><div class="text-xs font-medium">Trade assurance</div><div class="text-[11px] text-gray-500 hidden sm:block">100% payment protection</div></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl px-3 md:px-4 py-3 flex items-center gap-2 md:gap-3">
+        <span class="text-xl md:text-2xl flex-shrink-0">🚛</span>
+        <div><div class="text-xs font-medium">Global shipping</div><div class="text-[11px] text-gray-500 hidden sm:block">190+ countries served</div></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl px-3 md:px-4 py-3 flex items-center gap-2 md:gap-3">
+        <span class="text-xl md:text-2xl flex-shrink-0">✅</span>
+        <div><div class="text-xs font-medium">Verified suppliers</div><div class="text-[11px] text-gray-500 hidden sm:block">Factory inspected &amp; audited</div></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl px-3 md:px-4 py-3 flex items-center gap-2 md:gap-3">
+        <span class="text-xl md:text-2xl flex-shrink-0">🎧</span>
+        <div><div class="text-xs font-medium">24/7 support</div><div class="text-[11px] text-gray-500 hidden sm:block">Live chat &amp; phone</div></div>
+    </div>
+</div>
+
+<!-- Category showcase: 4-col on mobile, 8-col on desktop -->
+<div class="mb-4">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm md:text-base font-medium">Browse by <span class="text-brand">category</span></h2>
+        <a href="http://localhost:8000/categories" class="text-xs text-brand cursor-pointer">View all ›</a>
+    </div>
+    <div class="grid grid-cols-4 md:grid-cols-8 gap-2">
+                <a href="http://localhost:8000/category/electronics" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Electronics</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">1240K products</div>
+        </a>
+                <a href="http://localhost:8000/category/clothing" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Clothing</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">1240K products</div>
+        </a>
+                <a href="http://localhost:8000/category/books" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Books</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">992K products</div>
+        </a>
+                <a href="http://localhost:8000/category/home-garden" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Home &amp; Garden</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">992K products</div>
+        </a>
+                <a href="http://localhost:8000/category/sports" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Sports</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">992K products</div>
+        </a>
+                <a href="http://localhost:8000/category/cakes" class="showcase-card bg-white border border-gray-200 rounded-xl p-2 md:p-3 cursor-pointer text-center transition-colors hover:border-brand block">
+            <div class="text-2xl md:text-3xl mb-1 md:mb-1.5">📦</div>
+            <div class="text-[10px] md:text-xs font-medium">Cakes</div>
+            <div class="text-[9px] md:text-[10px] text-gray-400 mt-0.5 hidden md:block">10K products</div>
+        </a>
+            </div>
+</div>
+
+<!-- Flash sale strip -->
+<div class="bg-brand-light border border-brand-mid rounded-xl px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+    <div>
+        <div class="text-sm font-medium text-red-800">⚡ Flash sale — Ends in <strong class="text-brand font-semibold" id="countdown">02:23:18</strong></div>
+        <div class="text-xs text-red-700 mt-0.5">Up to 60% off selected electronics — limited stock</div>
+    </div>
+    <a href="http://localhost:8000/categories" class="bg-brand text-white text-xs px-4 py-2 rounded-lg font-medium whitespace-nowrap hover:bg-brand-dark transition-colors self-start sm:self-auto">
+        Shop flash sale →
+    </a>
+</div>
+
+<!-- Trending products -->
+<div class="mb-5">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm md:text-base font-medium">🔥 <span class="text-brand">Trending</span> products</h2>
+        <a href="http://localhost:8000/" class="text-xs text-brand">See all ›</a>
+    </div>
+    <!-- Filter chips: scrollable on mobile -->
+    <div class="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-hide">
+        <span class="cat-chip active text-xs px-3 py-1.5 rounded-full border border-brand bg-brand-light text-brand cursor-pointer whitespace-nowrap flex-shrink-0">All</span>
+        <span class="cat-chip text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer whitespace-nowrap flex-shrink-0">Wireless audio</span>
+        <span class="cat-chip text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer whitespace-nowrap flex-shrink-0">Smart home</span>
+        <span class="cat-chip text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer whitespace-nowrap flex-shrink-0">Wearables</span>
+        <span class="cat-chip text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer whitespace-nowrap flex-shrink-0">Office</span>
+        <span class="cat-chip text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 cursor-pointer whitespace-nowrap flex-shrink-0">Accessories</span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/1031-100x300.jpg" alt="TWS Wireless Earbuds - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds</div>
+                <div><span class="text-sm font-semibold text-brand">$45.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v2" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/452-100x300.jpg" alt="TWS Wireless Earbuds v2 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v2</div>
+                <div><span class="text-sm font-semibold text-brand">$49.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v3" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/329-100x300.jpg" alt="TWS Wireless Earbuds v3 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v3</div>
+                <div><span class="text-sm font-semibold text-brand">$51.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v4" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/977-100x300.jpg" alt="TWS Wireless Earbuds v4 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v4</div>
+                <div><span class="text-sm font-semibold text-brand">$53.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v5" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/931-100x300.jpg" alt="TWS Wireless Earbuds v5 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v5</div>
+                <div><span class="text-sm font-semibold text-brand">$45.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v6" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/265-100x300.jpg" alt="TWS Wireless Earbuds v6 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v6</div>
+                <div><span class="text-sm font-semibold text-brand">$47.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1">
+                    <span class="bg-green-50 text-green-800 text-[9px] px-1.5 py-0.5 rounded font-medium">Verified</span>
+                </div>
+            </div>
+        </a>
+            </div>
+</div>
+
+<!-- New arrivals -->
+<div class="mb-6">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm md:text-base font-medium">New arrivals <span class="text-brand">this week</span></h2>
+        <a href="http://localhost:8000/" class="text-xs text-brand">See all ›</a>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v7" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/380-100x300.jpg" alt="TWS Wireless Earbuds v7 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v7</div>
+                <div><span class="text-sm font-semibold text-brand">$49.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v8" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/525-100x300.jpg" alt="TWS Wireless Earbuds v8 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v8</div>
+                <div><span class="text-sm font-semibold text-brand">$51.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v9" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/698-100x300.jpg" alt="TWS Wireless Earbuds v9 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v9</div>
+                <div><span class="text-sm font-semibold text-brand">$53.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v10" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/926-100x300.jpg" alt="TWS Wireless Earbuds v10 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v10</div>
+                <div><span class="text-sm font-semibold text-brand">$45.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v11" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/490-100x300.jpg" alt="TWS Wireless Earbuds v11 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v11</div>
+                <div><span class="text-sm font-semibold text-brand">$47.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+                        <a href="http://localhost:8000/products/tws-wireless-earbuds-v12" class="product-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer block transition-colors">
+            <img src="./Home — Global B2B Marketplace_files/741-100x300.jpg" alt="TWS Wireless Earbuds v12 - Image 1" class="aspect-[3/4] object-cover w-full">
+            <div class="p-2 md:p-2.5">
+                <div class="text-xs text-gray-800 leading-snug mb-1 line-clamp-2">TWS Wireless Earbuds v12</div>
+                <div><span class="text-sm font-semibold text-brand">$49.00</span></div>
+                <div class="text-[10px] text-gray-400 mt-0.5">Stock: 250</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-gold text-[10px]">★★★★★</span>
+                    <span class="text-[10px] text-gray-400">(0)</span>
+                </div>
+            </div>
+        </a>
+            </div>
+</div>
+
+<script>
+    // Countdown timer
+    let total = 2*3600 + 42*60 + 34;
+    const el = document.getElementById('countdown');
+    setInterval(() => {
+        if (total <= 0) return;
+        total--;
+        const h = String(Math.floor(total/3600)).padStart(2,'0');
+        const m = String(Math.floor((total%3600)/60)).padStart(2,'0');
+        const s = String(total%60).padStart(2,'0');
+        el.textContent = h+':'+m+':'+s;
+    }, 1000);
+
+    // Category chip toggle for trending products
+    document.querySelectorAll('.cat-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        });
+    });
+</script>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 px-4 py-4 mt-8">
+        <div class="max-w-screen-xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex flex-wrap justify-center sm:justify-start gap-4">
+                <span class="text-xs text-gray-500 cursor-pointer hover:text-brand">About us</span>
+                <span class="text-xs text-gray-500 cursor-pointer hover:text-brand">Sitemap</span>
+                <span class="text-xs text-gray-500 cursor-pointer hover:text-brand">Privacy policy</span>
+                <span class="text-xs text-gray-500 cursor-pointer hover:text-brand">Terms of use</span>
+                <span class="text-xs text-gray-500 cursor-pointer hover:text-brand">Contact us</span>
+            </div>
+            <div class="text-xs text-gray-400">© 2025 ShopSail</div>
+        </div>
+    </footer>
+
+    <!-- Floating Back to Top Button -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 md:bottom-8 md:right-8 bg-brand text-white rounded-full p-3 md:p-4 shadow-lg hover:bg-brand-dark transition-all duration-300 opacity-0 invisible hover:shadow-xl" title="Back to top">
+        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+        </svg>
+    </button>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById('mobile-menu').classList.toggle('open');
+        }
+
+        // Back to top button functionality
+        const backToTopBtn = document.getElementById('back-to-top');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.remove('opacity-0', 'invisible');
+                backToTopBtn.classList.add('opacity-100');
+            } else {
+                backToTopBtn.classList.add('opacity-0', 'invisible');
+                backToTopBtn.classList.remove('opacity-100');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+
+</body></html>
