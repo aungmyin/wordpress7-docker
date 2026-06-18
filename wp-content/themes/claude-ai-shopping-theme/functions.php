@@ -125,6 +125,42 @@ add_action('wp_enqueue_scripts', 'claude_shopping_disable_woo_assets', 100);
  * Register custom REST endpoints with proper security
  */
 function claude_shopping_rest_api_init() {
+    // Register public products endpoint (no auth required for read)
+    register_rest_route('claude-shopping/v1', '/products', [
+        'methods' => 'GET',
+        'callback' => 'claude_shopping_get_products',
+        'permission_callback' => '__return_true',
+        'args' => [
+            'per_page' => [
+                'type' => 'integer',
+                'default' => 12,
+            ],
+            'status' => [
+                'type' => 'string',
+                'default' => 'publish',
+            ],
+            'category' => [
+                'type' => 'integer',
+            ],
+            'min_price' => [
+                'type' => 'number',
+            ],
+            'max_price' => [
+                'type' => 'number',
+            ],
+            'orderby' => [
+                'type' => 'string',
+                'enum' => ['date', 'price', 'title', 'popularity'],
+                'default' => 'date',
+            ],
+            'order' => [
+                'type' => 'string',
+                'enum' => ['asc', 'desc'],
+                'default' => 'desc',
+            ],
+        ],
+    ]);
+
     // Register custom REST endpoint for cart operations
     register_rest_route('claude-shopping/v1', '/cart', [
         'methods' => 'POST',
@@ -160,6 +196,108 @@ function claude_shopping_rest_api_init() {
     ]);
 }
 add_action('rest_api_init', 'claude_shopping_rest_api_init');
+
+/**
+ * Get products from WooCommerce
+ */
+function claude_shopping_get_products(\WP_REST_Request $request) {
+    if (!class_exists('WC_Product')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+
+    $per_page = intval($request->get_param('per_page')) ?? 12;
+    $status = sanitize_text_field($request->get_param('status') ?? 'publish');
+    $category = intval($request->get_param('category') ?? 0);
+    $min_price = floatval($request->get_param('min_price') ?? 0);
+    $max_price = floatval($request->get_param('max_price') ?? 9999999);
+    $orderby = sanitize_text_field($request->get_param('orderby') ?? 'date');
+    $order = sanitize_text_field($request->get_param('order') ?? 'desc');
+
+    $args = [
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'posts_per_page' => $per_page,
+        'orderby' => $orderby === 'popularity' ? 'meta_value_num' : $orderby,
+        'order' => $order,
+    ];
+
+    if ($orderby === 'popularity') {
+        $args['meta_key'] = 'total_sales';
+    }
+
+    if ($category > 0) {
+        $args['tax_query'] = [
+            [
+                'taxonomy' => 'product_cat',
+                'field' => 'term_id',
+                'terms' => $category,
+            ],
+        ];
+    }
+
+    if ($min_price > 0 || $max_price < 9999999) {
+        $args['meta_query'] = [
+            [
+                'key' => '_price',
+                'value' => [$min_price, $max_price],
+                'compare' => 'BETWEEN',
+                'type' => 'DECIMAL(10, 2)',
+            ],
+        ];
+    }
+
+    $query = new WP_Query($args);
+    $products = [];
+
+    foreach ($query->posts as $post) {
+        $product = wc_get_product($post->ID);
+        if (!$product) continue;
+
+        $product_data = [
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'description' => wp_strip_all_tags($product->get_description()),
+            'short_description' => wp_strip_all_tags($product->get_short_description()),
+            'price' => $product->get_price(),
+            'regular_price' => $product->get_regular_price(),
+            'sale_price' => $product->get_sale_price(),
+            'sku' => $product->get_sku(),
+            'stock_status' => $product->get_stock_status(),
+            'stock_quantity' => $product->get_stock_quantity(),
+            'image' => wp_get_attachment_url($product->get_image_id()),
+            'type' => $product->get_type(),
+            'categories' => array_map(function($cat) {
+                return [
+                    'id' => $cat->term_id,
+                    'name' => $cat->name,
+                ];
+            }, $product->get_category_ids() ? array_map('get_term', $product->get_category_ids()) : []),
+            'permalink' => $product->get_permalink(),
+        ];
+
+        if ($product->is_type('variable')) {
+            $variations = [];
+            foreach ($product->get_children() as $variation_id) {
+                $variation = wc_get_product($variation_id);
+                if ($variation) {
+                    $variations[] = [
+                        'id' => $variation->get_id(),
+                        'attributes' => $variation->get_attributes(),
+                        'price' => $variation->get_price(),
+                        'regular_price' => $variation->get_regular_price(),
+                        'sale_price' => $variation->get_sale_price(),
+                        'stock_quantity' => $variation->get_stock_quantity(),
+                    ];
+                }
+            }
+            $product_data['variations'] = $variations;
+        }
+
+        $products[] = $product_data;
+    }
+
+    return $products;
+}
 
 /**
  * Handle cart operations via REST API

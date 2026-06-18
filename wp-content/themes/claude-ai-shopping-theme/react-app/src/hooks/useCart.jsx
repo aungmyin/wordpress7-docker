@@ -2,8 +2,8 @@ import React, { createContext, useContext } from 'react'
 import { create } from 'zustand'
 import axios from 'axios'
 
-const API_URL = window.claudeShoppingTheme?.apiUrl || '/wp-json/wc/v3'
 const REST_URL = window.claudeShoppingTheme?.restUrl || '/wp-json'
+const API_URL = `${REST_URL}/claude-shopping/v1`
 
 // Zustand store for cart state
 const useCartStore = create((set, get) => ({
@@ -158,16 +158,16 @@ export function useProducts(params = {}) {
       setLoading(true)
       setError(null)
       try {
-        const response = await axios.get(`${API_URL}/products`, {
+        const response = await axios.get(`${REST_URL}/claude-shopping/v1/products`, {
           params: {
             per_page: 12,
-            status: 'publish',
             ...params,
           },
         })
         setProducts(response.data)
       } catch (err) {
-        setError(err.message)
+        console.error('Product fetch error:', err)
+        setError(err.response?.data?.message || err.message || 'Failed to load products')
       } finally {
         setLoading(false)
       }
