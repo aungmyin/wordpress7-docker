@@ -49,11 +49,11 @@ function claude_shopping_enqueue_scripts() {
         // React app is built - enqueue compiled files
         $manifest = json_decode(file_get_contents($react_manifest), true);
 
-        // Main JS file
-        if (isset($manifest['src/index.jsx']['file'])) {
+        // Main JS file - look for index.html entry (Vite's default entry point)
+        if (isset($manifest['index.html']['file'])) {
             wp_enqueue_script(
                 'claude-shopping-react',
-                CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $manifest['src/index.jsx']['file'],
+                CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $manifest['index.html']['file'],
                 [],
                 CLAUDE_SHOPPING_THEME_VERSION,
                 true
@@ -70,13 +70,15 @@ function claude_shopping_enqueue_scripts() {
         }
 
         // Main CSS file
-        if (isset($manifest['src/index.css']['file'])) {
-            wp_enqueue_style(
-                'claude-shopping-react-styles',
-                CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $manifest['src/index.css']['file'],
-                [],
-                CLAUDE_SHOPPING_THEME_VERSION
-            );
+        if (isset($manifest['index.html']['css']) && is_array($manifest['index.html']['css'])) {
+            foreach ($manifest['index.html']['css'] as $css_file) {
+                wp_enqueue_style(
+                    'claude-shopping-react-styles',
+                    CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $css_file,
+                    [],
+                    CLAUDE_SHOPPING_THEME_VERSION
+                );
+            }
         }
     } else {
         // React app not built yet - show setup message
@@ -354,3 +356,243 @@ function claude_shopping_process_checkout(\WP_REST_Request $request) {
  * Remove WooCommerce default sidebar
  */
 remove_action('woocommerce_sidebar', 'woocommerce_get_sidebar', 10);
+
+/**
+ * REST endpoint to generate demo products
+ */
+function claude_shopping_rest_generate_products() {
+    register_rest_route('claude-shopping/v1', '/generate-products', [
+        'methods' => 'POST',
+        'callback' => 'claude_shopping_generate_demo_products',
+        'permission_callback' => function() {
+            return current_user_can('manage_woocommerce');
+        },
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_rest_generate_products');
+
+/**
+ * Generate simple and variable products
+ */
+function claude_shopping_generate_demo_products() {
+    if (!class_exists('WC_Product_Simple')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+
+    // Simple products
+    $simple_products = [
+        [
+            'name' => 'Wireless Bluetooth Headphones',
+            'description' => 'Premium wireless headphones with active noise cancellation, 30-hour battery life, and crystal-clear sound quality.',
+            'price' => 129.99,
+            'regular_price' => 149.99,
+            'category' => 'Electronics',
+            'sku' => 'HEADPHONES-001',
+            'stock' => 50,
+        ],
+        [
+            'name' => 'USB-C Fast Charging Cable',
+            'description' => '6ft premium USB-C charging cable with 100W power delivery. Supports fast charging for laptops, tablets, and phones.',
+            'price' => 19.99,
+            'regular_price' => 24.99,
+            'category' => 'Electronics',
+            'sku' => 'USB-C-CABLE',
+            'stock' => 200,
+        ],
+        [
+            'name' => 'Portable Power Bank 20000mAh',
+            'description' => 'High-capacity power bank with dual USB ports and LED display. Charges your phone 5+ times.',
+            'price' => 34.99,
+            'regular_price' => 44.99,
+            'category' => 'Electronics',
+            'sku' => 'POWERBANK-20K',
+            'stock' => 75,
+        ],
+        [
+            'name' => 'Premium Laptop Stand',
+            'description' => 'Adjustable aluminum laptop stand for ergonomic workspace setup. Compatible with all laptops up to 17 inches.',
+            'price' => 49.99,
+            'regular_price' => 59.99,
+            'category' => 'Office',
+            'sku' => 'LAPTOP-STAND',
+            'stock' => 60,
+        ],
+        [
+            'name' => 'Desk Lamp LED - Dimmable',
+            'description' => 'LED desk lamp with 5 brightness levels and USB charging port. Energy-efficient with long-lasting LED bulb.',
+            'price' => 39.99,
+            'regular_price' => 49.99,
+            'category' => 'Office',
+            'sku' => 'DESK-LAMP-LED',
+            'stock' => 80,
+        ],
+    ];
+
+    // Variable products
+    $variable_products = [
+        [
+            'name' => 'Wireless Mouse - Ergonomic',
+            'description' => 'Ergonomic wireless mouse with precision tracking and 2-year battery life.',
+            'category' => 'Electronics',
+            'sku' => 'MOUSE-ERGONOMIC',
+            'attributes' => ['color' => ['Black', 'Silver', 'White']],
+            'variations' => [
+                ['sku' => 'MOUSE-BLACK', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'Black']],
+                ['sku' => 'MOUSE-SILVER', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'Silver']],
+                ['sku' => 'MOUSE-WHITE', 'price' => 24.99, 'regular_price' => 29.99, 'stock' => 100, 'attribute' => ['color' => 'White']],
+            ],
+        ],
+        [
+            'name' => 'Mechanical Gaming Keyboard',
+            'description' => 'RGB mechanical keyboard with customizable switches and aluminum frame.',
+            'category' => 'Electronics',
+            'sku' => 'KEYBOARD-GAMING',
+            'attributes' => ['switch_type' => ['Blue', 'Brown', 'Red']],
+            'variations' => [
+                ['sku' => 'KEYBOARD-BLUE', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Blue']],
+                ['sku' => 'KEYBOARD-BROWN', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Brown']],
+                ['sku' => 'KEYBOARD-RED', 'price' => 89.99, 'regular_price' => 109.99, 'stock' => 40, 'attribute' => ['switch_type' => 'Red']],
+            ],
+        ],
+        [
+            'name' => 'Phone Screen Protector Pack',
+            'description' => 'Pack of tempered glass screen protectors with easy-apply technology.',
+            'category' => 'Electronics',
+            'sku' => 'SCREEN-PROTECTOR',
+            'attributes' => ['quantity' => ['2 Pack', '3 Pack', '5 Pack']],
+            'variations' => [
+                ['sku' => 'PROTECTOR-2PACK', 'price' => 9.99, 'regular_price' => 12.99, 'stock' => 300, 'attribute' => ['quantity' => '2 Pack']],
+                ['sku' => 'PROTECTOR-3PACK', 'price' => 12.99, 'regular_price' => 16.99, 'stock' => 300, 'attribute' => ['quantity' => '3 Pack']],
+                ['sku' => 'PROTECTOR-5PACK', 'price' => 19.99, 'regular_price' => 24.99, 'stock' => 200, 'attribute' => ['quantity' => '5 Pack']],
+            ],
+        ],
+    ];
+
+    // Get or create categories
+    $categories = [];
+    foreach (['Electronics', 'Office'] as $cat_name) {
+        $cat = get_term_by('name', $cat_name, 'product_cat');
+        if (!$cat) {
+            $term = wp_insert_term($cat_name, 'product_cat');
+            $cat = get_term($term['term_id'], 'product_cat');
+        }
+        $categories[$cat_name] = $cat->term_id;
+    }
+
+    $simple_count = 0;
+    $variable_count = 0;
+
+    // Create simple products
+    foreach ($simple_products as $product_data) {
+        $existing = get_posts([
+            'post_type' => 'product',
+            'meta_key' => '_sku',
+            'meta_value' => $product_data['sku'],
+        ]);
+
+        if (!empty($existing)) {
+            continue;
+        }
+
+        $product = new WC_Product_Simple();
+        $product->set_name($product_data['name']);
+        $product->set_description($product_data['description']);
+        $product->set_price($product_data['price']);
+        $product->set_regular_price($product_data['regular_price']);
+        $product->set_sku($product_data['sku']);
+        $product->set_stock($product_data['stock']);
+        $product->set_manage_stock(true);
+        $product->set_status('publish');
+
+        if (isset($categories[$product_data['category']])) {
+            $product->set_category_ids([$categories[$product_data['category']]]);
+        }
+
+        $product->save();
+        $simple_count++;
+    }
+
+    // Create variable products
+    foreach ($variable_products as $product_data) {
+        $existing = get_posts([
+            'post_type' => 'product',
+            'meta_key' => '_sku',
+            'meta_value' => $product_data['sku'],
+        ]);
+
+        if (!empty($existing)) {
+            continue;
+        }
+
+        $product = new WC_Product_Variable();
+        $product->set_name($product_data['name']);
+        $product->set_description($product_data['description']);
+        $product->set_sku($product_data['sku']);
+        $product->set_status('publish');
+
+        if (isset($categories[$product_data['category']])) {
+            $product->set_category_ids([$categories[$product_data['category']]]);
+        }
+
+        // Register attributes
+        $attributes = [];
+        foreach ($product_data['attributes'] as $attr_name => $attr_values) {
+            $attr = wc_get_attribute(wc_attribute_taxonomy_to_name($attr_name));
+            if (!$attr) {
+                $attr_id = wc_create_attribute([
+                    'name' => ucfirst(str_replace('_', ' ', $attr_name)),
+                    'slug' => $attr_name,
+                    'type' => 'select',
+                    'orderby' => 'menu_order',
+                    'has_archives' => false,
+                ]);
+            } else {
+                $attr_id = $attr->get_id();
+            }
+
+            foreach ($attr_values as $value) {
+                wp_insert_term($value, 'pa_' . $attr_name, ['description' => '']);
+            }
+
+            $attribute = new WC_Product_Attribute();
+            $attribute->set_id($attr_id);
+            $attribute->set_name('pa_' . $attr_name);
+            $attribute->set_options($attr_values);
+            $attribute->set_visible(true);
+            $attribute->set_variation(true);
+
+            $attributes[] = $attribute;
+        }
+
+        $product->set_attributes($attributes);
+        $product->save();
+
+        // Create variations
+        foreach ($product_data['variations'] as $variation_data) {
+            $variation = new WC_Product_Variation();
+            $variation->set_parent_id($product->get_id());
+            $variation->set_sku($variation_data['sku']);
+            $variation->set_price($variation_data['price']);
+            $variation->set_regular_price($variation_data['regular_price']);
+            $variation->set_stock($variation_data['stock']);
+            $variation->set_manage_stock(true);
+            $variation->set_status('publish');
+
+            foreach ($variation_data['attribute'] as $attr_name => $attr_value) {
+                $variation->set_attributes(['pa_' . $attr_name => $attr_value]);
+            }
+
+            $variation->save();
+        }
+
+        $variable_count++;
+    }
+
+    return [
+        'success' => true,
+        'simple_products_created' => $simple_count,
+        'variable_products_created' => $variable_count,
+        'total' => $simple_count + $variable_count,
+        'message' => "Created {$simple_count} simple products and {$variable_count} variable products",
+    ];
+}
