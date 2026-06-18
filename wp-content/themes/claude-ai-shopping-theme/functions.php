@@ -369,6 +369,40 @@ function claude_shopping_get_page_content($request) {
     ];
 }
 
+/**
+ * REST Endpoint to Get Product Categories
+ */
+function claude_shopping_register_categories_endpoint() {
+    register_rest_route('claude-shopping/v1', '/categories', [
+        'methods' => 'GET',
+        'callback' => 'claude_shopping_get_categories',
+        'permission_callback' => '__return_true',
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_register_categories_endpoint');
+
+function claude_shopping_get_categories() {
+    $categories = get_terms([
+        'taxonomy' => 'product_cat',
+        'hide_empty' => false,
+        'orderby' => 'name',
+    ]);
+
+    if (is_wp_error($categories)) {
+        return new \WP_Error('categories_error', 'Error fetching categories', ['status' => 500]);
+    }
+
+    return array_map(function ($cat) {
+        return [
+            'id' => $cat->term_id,
+            'name' => $cat->name,
+            'slug' => $cat->slug,
+            'description' => $cat->description,
+            'count' => $cat->count,
+        ];
+    }, $categories);
+}
+
 add_action('admin_menu', function() {
     add_submenu_page(
         'woocommerce',

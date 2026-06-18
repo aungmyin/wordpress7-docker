@@ -7,6 +7,8 @@ export default function HomePage() {
   const [page, setPage] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
 
   const { products, loading: productsLoading } = useProducts({ per_page: 8 })
 
@@ -29,7 +31,25 @@ export default function HomePage() {
       }
     }
 
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/claude-shopping/v1/categories`
+        )
+        if (!response.ok) {
+          throw new Error('Categories not found')
+        }
+        const data = await response.json()
+        setCategories(data)
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+      } finally {
+        setCategoriesLoading(false)
+      }
+    }
+
     fetchPage()
+    fetchCategories()
   }, [])
 
   // Extract first paragraph as subtitle
@@ -154,29 +174,57 @@ export default function HomePage() {
         {/* Categories Section */}
         <div className="bg-white rounded-lg shadow-md p-12 mb-16">
           <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Shop by Category</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Link
-              to="/category/17"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-8 rounded-lg text-center transition transform hover:scale-105"
-            >
-              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <h3 className="text-2xl font-bold">Electronics</h3>
-              <p className="text-blue-100 mt-2">Laptops, phones, accessories</p>
-            </Link>
 
-            <Link
-              to="/category/18"
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-8 rounded-lg text-center transition transform hover:scale-105"
-            >
-              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-2xl font-bold">Office</h3>
-              <p className="text-green-100 mt-2">Desks, lamps, organizers</p>
-            </Link>
-          </div>
+          {categoriesLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Loading categories...</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No categories available</p>
+            </div>
+          ) : (
+            <div className={`grid gap-6 ${categories.length <= 2 ? 'md:grid-cols-2' : categories.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+              {categories.map((category, index) => {
+                const colors = [
+                  'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+                  'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
+                  'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700',
+                  'from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700',
+                  'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700',
+                  'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700',
+                ]
+                const colorClass = colors[index % colors.length]
+
+                const icons = [
+                  'M13 10V3L4 14h7v7l9-11h-7z',
+                  'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+                  'M3 12a9 9 0 018.9-9 9 9 0 1-8.9 9z',
+                  'M7 16a4 4 0 11-8 0 4 4 0 018 0zM16 8a2 2 0 11-4 0 2 2 0 014 0z',
+                  'M12 6.253v13m0-13C6.596 6.253 2 10.849 2 16.5S6.596 26.747 12 26.747s10-4.596 10-10.247S17.404 6.253 12 6.253z',
+                  'M12 6.253v13m0-13C6.596 6.253 2 10.849 2 16.5S6.596 26.747 12 26.747s10-4.596 10-10.247S17.404 6.253 12 6.253z',
+                ]
+                const iconPath = icons[index % icons.length]
+
+                return (
+                  <Link
+                    key={category.id}
+                    to={`/category/${category.id}`}
+                    className={`bg-gradient-to-r ${colorClass} text-white p-8 rounded-lg text-center transition transform hover:scale-105`}
+                  >
+                    <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
+                    </svg>
+                    <h3 className="text-2xl font-bold">{category.name}</h3>
+                    {category.description && (
+                      <p className="opacity-90 mt-2">{category.description}</p>
+                    )}
+                    <p className="text-sm opacity-75 mt-1">({category.count} products)</p>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Newsletter Section */}
