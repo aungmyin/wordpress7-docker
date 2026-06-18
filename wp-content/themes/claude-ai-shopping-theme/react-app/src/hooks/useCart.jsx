@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react'
 import { create } from 'zustand'
 import axios from 'axios'
 
-const REST_URL = window.claudeShoppingTheme?.restUrl || '/wp-json'
+const REST_URL = window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'
 const API_URL = `${REST_URL}/claude-shopping/v1`
 
 // Zustand store for cart state
