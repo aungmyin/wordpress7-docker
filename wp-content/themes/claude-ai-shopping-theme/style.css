@@ -1,0 +1,58 @@
+/*
+ * Theme Name: Claude AI Shopping Theme
+ * Theme URI: https://github.com/aungmyin/wordpress7-docker
+ * Author: Aung My In
+ * Author URI: https://github.com/aungmyin
+ * Description: Modern React-powered WooCommerce shopping theme. Fast, responsive, AI-optimized.
+ * Version: 1.0.0
+ * License: GPL v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: claude-ai-shopping
+ * Domain Path: /languages
+ * Requires at least: 5.9
+ * Requires PHP: 8.0
+ * Requires Plugins: woocommerce
+ * Tags: woocommerce, e-commerce, shopping, react, modern
+ */
+
+/*
+ * This theme uses React for the frontend.
+ * The main app is served from /react-app/dist/index.html
+ * CSS is compiled from React components.
+ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Fallback styles (when JS is disabled) */
+.no-js {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.no-js p {
+  margin: 10px 0;
+}
+
+.no-js a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.no-js a:hover {
+  text-decoration: underline;
+}

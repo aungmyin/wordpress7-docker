@@ -1,0 +1,58 @@
+/* Base styles for WordPress integration */
+
+/* Container */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* WordPress specific styles */
+.wp-admin-bar-offset {
+  padding-top: 32px;
+}
+
+/* Ensure proper display of React root element */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Skip link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* WooCommerce integration styles */
+.woocommerce-message,
+.woocommerce-error {
+  display: none !important;
+}
+
+/* Disable WooCommerce default styles */
+.woocommerce ul.products {
+  display: none !important;
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .footer,
+  button,
+  input[type="button"],
+  input[type="submit"] {
+    display: none;
+  }
+}
