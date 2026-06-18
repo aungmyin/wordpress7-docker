@@ -48,12 +48,30 @@ export default function Navbar() {
             >
               Home
             </Link>
-            <Link
-              to="/"
-              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline"
-            >
-              Shop
-            </Link>
+
+            {/* Categories Dropdown */}
+            <div className="relative group hidden sm:inline-block">
+              <button className="text-gray-700 hover:text-blue-600 transition flex items-center">
+                Categories
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+              <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg py-2 w-48 z-10">
+                <Link
+                  to="/category/17"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Electronics
+                </Link>
+                <Link
+                  to="/category/18"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Office
+                </Link>
+              </div>
+            </div>
 
             {/* Cart Icon */}
             <Link to="/cart" className="relative">
@@ -114,9 +132,23 @@ export default function Navbar() {
             <Link to="/" className="block py-2 text-gray-700 hover:text-blue-600">
               Home
             </Link>
-            <Link to="/" className="block py-2 text-gray-700 hover:text-blue-600">
-              Shop
-            </Link>
+            <div className="py-2 border-t">
+              <p className="font-semibold text-gray-700 py-2">Categories</p>
+              <Link
+                to="/category/17"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block pl-4 py-2 text-gray-600 hover:text-blue-600"
+              >
+                Electronics
+              </Link>
+              <Link
+                to="/category/18"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block pl-4 py-2 text-gray-600 hover:text-blue-600"
+              >
+                Office
+              </Link>
+            </div>
           </div>
         )}
       </div>
