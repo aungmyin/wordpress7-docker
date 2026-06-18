@@ -41,6 +41,11 @@ if (!is_admin()) {
 // Load main plugin class
 require_once CLAUDE_AI_SCANNER_DIR . 'includes/class-plugin.php';
 
+// Load demo products generator (for testing shopping theme)
+if (function_exists('wc_get_products')) {
+    require_once CLAUDE_AI_SCANNER_DIR . 'demo-products.php';
+}
+
 // Register activation hook
 register_activation_hook(__FILE__, ['Claude_AI_Scanner_Plugin', 'activate']);
 
