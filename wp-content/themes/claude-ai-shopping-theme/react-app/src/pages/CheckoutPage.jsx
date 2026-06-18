@@ -1,8 +1,10 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import { useCart } from '../hooks/useCart'
 
 export default function CheckoutPage() {
+  const navigate = useNavigate()
   const { items, total, count } = useCart()
   const [formData, setFormData] = React.useState({
     firstName: '',
@@ -16,6 +18,7 @@ export default function CheckoutPage() {
     country: '',
   })
   const [isProcessing, setIsProcessing] = React.useState(false)
+  const [error, setError] = React.useState(null)
 
   if (items.length === 0) {
     return (
@@ -36,16 +39,36 @@ export default function CheckoutPage() {
       ...prev,
       [name]: value,
     }))
+    setError(null)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsProcessing(true)
-    // Simulate checkout process
-    setTimeout(() => {
-      alert('Order placed successfully! This is a demo. In production, this would integrate with WooCommerce checkout.')
+    setError(null)
+
+    try {
+      const response = await axios.post(
+        `${window.claudeShoppingTheme?.restUrl || '/wp-json'}/claude-shopping/v1/checkout`,
+        formData,
+        {
+          headers: {
+            'X-WP-Nonce': window.claudeShoppingTheme?.nonce || '',
+          },
+        }
+      )
+
+      if (response.data.success) {
+        alert(`✓ Order #${response.data.order_number} placed successfully!\n\nConfirmation email sent to ${formData.email}`)
+        navigate('/')
+      } else {
+        setError(response.data.message || 'Failed to create order')
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Checkout failed. Please try again.')
+    } finally {
       setIsProcessing(false)
-    }, 2000)
+    }
   }
 
   return (
@@ -57,6 +80,11 @@ export default function CheckoutPage() {
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-8">
+              {error && (
+                <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
               <form onSubmit={handleSubmit}>
                 {/* Billing Information */}
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Billing Information</h2>

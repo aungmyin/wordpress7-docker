@@ -92,10 +92,7 @@ export default function ProductPage() {
           {product.description && (
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Description</h2>
-              <div
-                className="text-gray-700"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
+              <p className="text-gray-700 whitespace-pre-wrap">{product.description}</p>
             </div>
           )}
 

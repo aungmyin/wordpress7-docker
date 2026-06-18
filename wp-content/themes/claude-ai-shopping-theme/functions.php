@@ -120,14 +120,41 @@ function claude_shopping_disable_woo_assets() {
 add_action('wp_enqueue_scripts', 'claude_shopping_disable_woo_assets', 100);
 
 /**
- * Allow WooCommerce REST API access without authentication for public endpoints
+ * Register custom REST endpoints with proper security
  */
 function claude_shopping_rest_api_init() {
     // Register custom REST endpoint for cart operations
     register_rest_route('claude-shopping/v1', '/cart', [
         'methods' => 'POST',
         'callback' => 'claude_shopping_handle_cart',
-        'permission_callback' => '__return_true',
+        'permission_callback' => function(\WP_REST_Request $request) {
+            // Verify nonce for CSRF protection
+            $nonce = $request->get_header('X-WP-Nonce');
+            if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+                return new \WP_Error('invalid_nonce', 'Nonce verification failed', ['status' => 403]);
+            }
+            return true;
+        },
+        'args' => [
+            'action' => [
+                'required' => true,
+                'type' => 'string',
+                'enum' => ['add', 'get', 'update', 'remove'],
+            ],
+        ],
+    ]);
+
+    // Register checkout endpoint
+    register_rest_route('claude-shopping/v1', '/checkout', [
+        'methods' => 'POST',
+        'callback' => 'claude_shopping_process_checkout',
+        'permission_callback' => function(\WP_REST_Request $request) {
+            $nonce = $request->get_header('X-WP-Nonce');
+            if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+                return new \WP_Error('invalid_nonce', 'Nonce verification failed', ['status' => 403]);
+            }
+            return true;
+        },
     ]);
 }
 add_action('rest_api_init', 'claude_shopping_rest_api_init');
@@ -247,6 +274,81 @@ function claude_shopping_register_image_sizes() {
     add_image_size('claude-shopping-product-grid', 400, 400, true);
 }
 add_action('after_setup_theme', 'claude_shopping_register_image_sizes');
+
+/**
+ * Process checkout and create WooCommerce order
+ */
+function claude_shopping_process_checkout(\WP_REST_Request $request) {
+    if (!class_exists('WC_Cart') || !class_exists('WC_Order')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+
+    $params = $request->get_json_params();
+
+    // Validate required fields
+    $required_fields = ['firstName', 'lastName', 'email', 'address', 'city', 'zip', 'country'];
+    foreach ($required_fields as $field) {
+        if (empty($params[$field])) {
+            return new \WP_Error('missing_field', "Missing required field: {$field}", ['status' => 400]);
+        }
+    }
+
+    try {
+        // Get cart
+        $cart = WC()->cart;
+        if ($cart->is_empty()) {
+            return new \WP_Error('empty_cart', 'Cart is empty', ['status' => 400]);
+        }
+
+        // Create order
+        $order = wc_create_order([
+            'status' => 'pending',
+        ]);
+
+        // Add order data
+        $order->set_billing_first_name(sanitize_text_field($params['firstName']));
+        $order->set_billing_last_name(sanitize_text_field($params['lastName']));
+        $order->set_billing_email(sanitize_email($params['email']));
+        $order->set_billing_phone(sanitize_text_field($params['phone'] ?? ''));
+        $order->set_billing_address_1(sanitize_text_field($params['address']));
+        $order->set_billing_city(sanitize_text_field($params['city']));
+        $order->set_billing_state(sanitize_text_field($params['state'] ?? ''));
+        $order->set_billing_postcode(sanitize_text_field($params['zip']));
+        $order->set_billing_country(sanitize_text_field($params['country']));
+
+        // Copy billing to shipping
+        $order->set_shipping_first_name($order->get_billing_first_name());
+        $order->set_shipping_last_name($order->get_billing_last_name());
+        $order->set_shipping_address_1($order->get_billing_address_1());
+        $order->set_shipping_city($order->get_billing_city());
+        $order->set_shipping_state($order->get_billing_state());
+        $order->set_shipping_postcode($order->get_billing_postcode());
+        $order->set_shipping_country($order->get_billing_country());
+
+        // Add cart items to order
+        foreach ($cart->get_cart() as $cart_item) {
+            $order->add_product(
+                $cart_item['data'],
+                $cart_item['quantity']
+            );
+        }
+
+        // Calculate totals
+        $order->calculate_totals();
+
+        // Clear cart
+        $cart->empty_cart();
+
+        return [
+            'success' => true,
+            'order_id' => $order->get_id(),
+            'order_number' => $order->get_order_number(),
+            'message' => 'Order created successfully. You will receive confirmation email shortly.',
+        ];
+    } catch (\Exception $e) {
+        return new \WP_Error('checkout_error', $e->getMessage(), ['status' => 500]);
+    }
+}
 
 /**
  * Remove WooCommerce default sidebar

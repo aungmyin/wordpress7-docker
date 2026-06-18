@@ -12,6 +12,12 @@ export default function HomePage() {
     order: sortBy === 'price-asc' ? 'asc' : 'desc',
   }
 
+  // Add category filter
+  if (filterCategory) {
+    params.category = filterCategory
+  }
+
+  // Add price filter
   if (filterPrice === 'under-50') {
     params.min_price = 0
     params.max_price = 50

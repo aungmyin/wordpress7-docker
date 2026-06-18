@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../hooks/useCart'
 
 export default function Navbar() {
+  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const cartCount = useCart((state) => state.count)
@@ -10,7 +11,9 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      window.location.href = `/?search=${encodeURIComponent(searchQuery)}`
+      navigate(`/?search=${encodeURIComponent(searchQuery)}`)
+      setSearchQuery('')
+      setIsMobileMenuOpen(false)
     }
   }
 

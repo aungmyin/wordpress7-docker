@@ -20,6 +20,10 @@ const useCartStore = create((set, get) => ({
         action: 'add',
         product_id: productId,
         quantity,
+      }, {
+        headers: {
+          'X-WP-Nonce': window.claudeShoppingTheme?.nonce || '',
+        },
       })
       set({
         items: response.data.items,
@@ -44,6 +48,10 @@ const useCartStore = create((set, get) => ({
         action: 'update',
         cart_item_key: cartItemKey,
         quantity,
+      }, {
+        headers: {
+          'X-WP-Nonce': window.claudeShoppingTheme?.nonce || '',
+        },
       })
       set({
         items: response.data.items,
@@ -67,6 +75,10 @@ const useCartStore = create((set, get) => ({
       const response = await axios.post(`${REST_URL}/claude-shopping/v1/cart`, {
         action: 'remove',
         cart_item_key: cartItemKey,
+      }, {
+        headers: {
+          'X-WP-Nonce': window.claudeShoppingTheme?.nonce || '',
+        },
       })
       set({
         items: response.data.items,
@@ -89,6 +101,10 @@ const useCartStore = create((set, get) => ({
     try {
       const response = await axios.post(`${REST_URL}/claude-shopping/v1/cart`, {
         action: 'get',
+      }, {
+        headers: {
+          'X-WP-Nonce': window.claudeShoppingTheme?.nonce || '',
+        },
       })
       set({
         items: response.data.items,
@@ -134,6 +150,9 @@ export function useProducts(params = {}) {
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState(null)
 
+  // Serialize params to stable string to avoid dependency array issues
+  const paramsKey = JSON.stringify(params)
+
   React.useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
@@ -155,7 +174,7 @@ export function useProducts(params = {}) {
     }
 
     fetchProducts()
-  }, [params])
+  }, [paramsKey])
 
   return { products, loading, error }
 }
