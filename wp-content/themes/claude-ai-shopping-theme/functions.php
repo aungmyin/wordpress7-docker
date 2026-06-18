@@ -358,6 +358,84 @@ function claude_shopping_process_checkout(\WP_REST_Request $request) {
 remove_action('woocommerce_sidebar', 'woocommerce_get_sidebar', 10);
 
 /**
+ * Admin page for generating demo products
+ */
+add_action('admin_menu', function() {
+    add_submenu_page(
+        'woocommerce',
+        'Generate Demo Products',
+        'Generate Demo Products',
+        'manage_woocommerce',
+        'claude-generate-products',
+        'claude_shopping_admin_generate_products_page'
+    );
+});
+
+function claude_shopping_admin_generate_products_page() {
+    if (isset($_POST['generate_products']) && check_admin_referer('generate_products_nonce')) {
+        $result = claude_shopping_generate_demo_products();
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p>
+                <strong>✅ Products Generated!</strong><br>
+                Simple Products: <?php echo $result['simple_products_created']; ?><br>
+                Variable Products: <?php echo $result['variable_products_created']; ?><br>
+                Total: <?php echo $result['total']; ?>
+            </p>
+        </div>
+        <?php
+    }
+    ?>
+    <div class="wrap">
+        <h1>Generate Demo Products</h1>
+
+        <div style="background: white; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2>Create Sample Products</h2>
+            <p>This will create demo WooCommerce products for testing the shopping theme:</p>
+
+            <h3>What Will Be Created:</h3>
+            <ul style="list-style: none; padding-left: 0; line-height: 1.8;">
+                <li><strong>Simple Products (5):</strong></li>
+                <ul style="margin-left: 20px;">
+                    <li>✓ Wireless Bluetooth Headphones</li>
+                    <li>✓ USB-C Fast Charging Cable</li>
+                    <li>✓ Portable Power Bank 20000mAh</li>
+                    <li>✓ Premium Laptop Stand</li>
+                    <li>✓ Desk Lamp LED - Dimmable</li>
+                </ul>
+
+                <li style="margin-top: 15px;"><strong>Variable Products (3):</strong></li>
+                <ul style="margin-left: 20px;">
+                    <li>✓ Wireless Mouse (Colors: Black, Silver, White)</li>
+                    <li>✓ Mechanical Gaming Keyboard (Switches: Blue, Brown, Red)</li>
+                    <li>✓ Phone Screen Protector Pack (Packs: 2, 3, 5)</li>
+                </ul>
+
+                <li style="margin-top: 15px;"><strong>Total: 13 Products</strong></li>
+            </ul>
+
+            <form method="post" style="margin-top: 20px;">
+                <?php wp_nonce_field('generate_products_nonce'); ?>
+                <button type="submit" name="generate_products" class="button button-primary button-large">
+                    ✨ Generate Demo Products
+                </button>
+            </form>
+
+            <hr style="margin: 30px 0;">
+
+            <h3>After Creating Products:</h3>
+            <ol style="padding-left: 20px;">
+                <li>Click the button above</li>
+                <li>Products will be created in your store</li>
+                <li>Go to <a href="<?php echo home_url(); ?>" target="_blank">your storefront</a> and refresh</li>
+                <li>You should see all products displayed!</li>
+            </ol>
+        </div>
+    </div>
+    <?php
+}
+
+/**
  * REST endpoint to generate demo products
  */
 function claude_shopping_rest_generate_products() {
