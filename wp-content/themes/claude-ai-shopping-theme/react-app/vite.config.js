@@ -4,8 +4,9 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  root: 'public',
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     assetsDir: 'assets',
     manifest: true,
     minify: 'terser',
