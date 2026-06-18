@@ -1,6 +1,11 @@
 <?php
 /**
- * Claude Shopping REST API
+ * Plugin Name: Claude Shopping REST API
+ * Plugin URI: https://github.com/aungmyin/wordpress7-docker
+ * Description: REST API endpoints for Claude AI Shopping Theme
+ * Version: 1.0.0
+ * Author: Aung My In
+ * License: GPL v2 or later
  *
  * @package Claude_Shopping_API
  */
@@ -99,6 +104,8 @@ function claude_shopping_get_products(\WP_REST_Request $request) {
         $product = wc_get_product($post->ID);
         if (!$product) continue;
 
+        $in_stock = $product->get_stock_status() === 'instock' && ($product->get_stock_quantity() === null || $product->get_stock_quantity() > 0);
+
         $product_data = [
             'id' => $product->get_id(),
             'name' => $product->get_name(),
@@ -107,7 +114,8 @@ function claude_shopping_get_products(\WP_REST_Request $request) {
             'regular_price' => $product->get_regular_price(),
             'sku' => $product->get_sku(),
             'stock_status' => $product->get_stock_status(),
-            'stock_quantity' => $product->get_stock_quantity(),
+            'stock_quantity' => $product->get_stock_quantity() ?? 0,
+            'in_stock' => $in_stock,
             'image' => wp_get_attachment_url($product->get_image_id()),
             'type' => $product->get_type(),
             'permalink' => $product->get_permalink(),
