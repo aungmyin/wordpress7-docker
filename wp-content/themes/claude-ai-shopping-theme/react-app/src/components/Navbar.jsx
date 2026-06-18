@@ -73,6 +73,13 @@ export default function Navbar() {
               </div>
             </div>
 
+            <Link
+              to="/about"
+              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline"
+            >
+              About
+            </Link>
+
             {/* Cart Icon */}
             <Link to="/cart" className="relative">
               <svg
@@ -129,8 +136,11 @@ export default function Navbar() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </form>
-            <Link to="/" className="block py-2 text-gray-700 hover:text-blue-600">
+            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600">
               Home
+            </Link>
+            <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600">
+              About
             </Link>
             <div className="py-2 border-t">
               <p className="font-semibold text-gray-700 py-2">Categories</p>
