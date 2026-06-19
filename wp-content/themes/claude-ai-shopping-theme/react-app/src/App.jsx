@@ -2,17 +2,15 @@ import React, { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import HomePage from './pages/HomePage'
+import ProductPage from './pages/ProductPage'
+import CategoryPage from './pages/CategoryPage'
+import AboutPage from './pages/AboutPage'
+import CartPage from './pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage'
+import ContactPage from './pages/ContactPage'
+import NotFound from './pages/NotFound'
 import { CartProvider } from './hooks/useCart'
-
-// Lazy load pages for code splitting
-const HomePage = React.lazy(() => import('./pages/HomePage'))
-const ProductPage = React.lazy(() => import('./pages/ProductPage'))
-const CategoryPage = React.lazy(() => import('./pages/CategoryPage'))
-const AboutPage = React.lazy(() => import('./pages/AboutPage'))
-const CartPage = React.lazy(() => import('./pages/CartPage'))
-const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'))
-const ContactPage = React.lazy(() => import('./pages/ContactPage'))
-const NotFound = React.lazy(() => import('./pages/NotFound'))
 
 // Loading fallback component
 function PageLoader() {
@@ -31,7 +29,7 @@ function PageLoader() {
 // Register Service Worker for caching
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/wp-content/themes/claude-ai-shopping-theme/react-app/public/sw.js')
+    navigator.serviceWorker.register('/wp-content/themes/claude-ai-shopping-theme/sw.js')
       .catch(() => {
         // Service worker registration failed, continue anyway
       })
