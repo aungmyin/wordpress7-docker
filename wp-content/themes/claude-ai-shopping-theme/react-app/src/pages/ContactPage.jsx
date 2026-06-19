@@ -167,27 +167,32 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {pageError && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg mb-12">
-            <p className="font-semibold mb-2">ℹ️ Contact Page Not Created</p>
-            <p className="mb-3">To add content above the enquiry form, please create a WordPress page with:</p>
-            <ul className="list-disc ml-5 space-y-1 mb-4">
-              <li><strong>Title:</strong> "Contact" (or your preferred title)</li>
-              <li><strong>Slug:</strong> "contact"</li>
-              <li><strong>Content:</strong> Add your contact page content (address, hours, etc.)</li>
-            </ul>
-            <p className="text-sm">Once created and published, it will automatically appear above the contact form!</p>
-          </div>
-        )}
-
-        {page && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-16">
-            <div
-              className="prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: page.content }}
+        {/* Google Map */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Our Office Location</h2>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <iframe
+              title="Office Location Map"
+              width="100%"
+              height="450"
+              style={{ border: 0 }}
+              loading="lazy"
+              allowFullScreen=""
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1234567890!2d-74.0059!3d40.7128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s${encodeURIComponent(contactInfo.address)}!2s${encodeURIComponent(contactInfo.address)}!5e0!3m2!1sen!2sus!4v1234567890`}
             />
           </div>
-        )}
+          <p className="text-center text-gray-600 mt-4">
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(contactInfo.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              Open in Google Maps →
+            </a>
+          </p>
+        </div>
 
         {/* Contact Form */}
         <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
