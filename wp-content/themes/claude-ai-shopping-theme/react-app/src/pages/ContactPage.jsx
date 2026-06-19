@@ -5,6 +5,11 @@ export default function ContactPage() {
   const [page, setPage] = useState(null)
   const [pageLoading, setPageLoading] = useState(true)
   const [pageError, setPageError] = useState(null)
+  const [contactInfo, setContactInfo] = useState({
+    email: 'support@claudeai.shop',
+    phone: '+1 (234) 567-890',
+    address: '123 Shopping Street, Commerce City, CC 12345',
+  })
 
   const [formData, setFormData] = useState({
     name: '',
@@ -21,13 +26,24 @@ export default function ContactPage() {
     const fetchPage = async () => {
       try {
         const response = await fetch(
-          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/claude-shopping/v1/page/contact`
+          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/wp/v2/pages?slug=contact`
         )
         if (!response.ok) {
           throw new Error('Contact page not found')
         }
         const data = await response.json()
-        setPage(data)
+        if (data.length > 0) {
+          const contactPage = data[0]
+          setPage({
+            title: contactPage.title.rendered,
+            content: contactPage.content.rendered,
+          })
+          setContactInfo({
+            email: contactPage.meta?.contact_email || 'support@claudeai.shop',
+            phone: contactPage.meta?.contact_phone || '+1 (234) 567-890',
+            address: contactPage.meta?.contact_address || '123 Shopping Street, Commerce City, CC 12345',
+          })
+        }
       } catch (err) {
         setPageError(err.message)
       } finally {
@@ -106,6 +122,50 @@ export default function ContactPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+        {/* Contact Info Cards - 3 Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Email</h3>
+            <p className="text-gray-600">
+              <a href={`mailto:${contactInfo.email}`} className="text-blue-600 hover:text-blue-800">
+                {contactInfo.email}
+              </a>
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Phone</h3>
+            <p className="text-gray-600">
+              <a href={`tel:${contactInfo.phone.replace(/\D/g, '')}`} className="text-blue-600 hover:text-blue-800">
+                {contactInfo.phone}
+              </a>
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Location</h3>
+            <p className="text-gray-600 whitespace-pre-line">
+              {contactInfo.address}
+            </p>
+          </div>
+        </div>
 
         {pageError && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg mb-12">

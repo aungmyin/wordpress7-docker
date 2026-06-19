@@ -617,6 +617,147 @@ function claude_shopping_generate_demo_products() {
 }
 
 /**
+ * Register Meta Fields for Contact Page
+ */
+function claude_shopping_register_contact_meta() {
+    register_meta('post', 'contact_email', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'contact_phone', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'contact_address', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+}
+add_action('init', 'claude_shopping_register_contact_meta');
+
+/**
+ * Add Meta Box for Contact Page Fields
+ */
+function claude_shopping_add_contact_meta_box() {
+    add_meta_box(
+        'contact_info',
+        'Contact Information',
+        'claude_shopping_contact_meta_box_callback',
+        'page',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'claude_shopping_add_contact_meta_box');
+
+function claude_shopping_contact_meta_box_callback($post) {
+    $contact_email = get_post_meta($post->ID, 'contact_email', true);
+    $contact_phone = get_post_meta($post->ID, 'contact_phone', true);
+    $contact_address = get_post_meta($post->ID, 'contact_address', true);
+
+    wp_nonce_field('claude_contact_meta_nonce', 'claude_contact_meta_nonce');
+    ?>
+    <style>
+        .contact-meta-field {
+            margin-bottom: 15px;
+        }
+        .contact-meta-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .contact-meta-field input,
+        .contact-meta-field textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+        }
+        .contact-meta-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .contact-meta-notice {
+            background: #f0f7ff;
+            border-left: 4px solid #0073aa;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+
+    <div class="contact-meta-notice">
+        <strong>ℹ️ Contact Info:</strong> Edit the fields below to update the contact information displayed on the Contact page (3-column layout).
+    </div>
+
+    <div class="contact-meta-field">
+        <label for="contact_email">Email Address</label>
+        <input
+            type="email"
+            id="contact_email"
+            name="contact_email"
+            value="<?php echo esc_attr($contact_email); ?>"
+            placeholder="support@example.com"
+        />
+    </div>
+
+    <div class="contact-meta-field">
+        <label for="contact_phone">Phone Number</label>
+        <input
+            type="tel"
+            id="contact_phone"
+            name="contact_phone"
+            value="<?php echo esc_attr($contact_phone); ?>"
+            placeholder="+1 (234) 567-890"
+        />
+    </div>
+
+    <div class="contact-meta-field">
+        <label for="contact_address">Address</label>
+        <textarea
+            id="contact_address"
+            name="contact_address"
+            placeholder="123 Shopping Street, Commerce City, CC 12345"
+        ><?php echo esc_textarea($contact_address); ?></textarea>
+    </div>
+    <?php
+}
+
+/**
+ * Save Contact Meta Fields
+ */
+function claude_shopping_save_contact_meta($post_id) {
+    if (!isset($_POST['claude_contact_meta_nonce']) || !wp_verify_nonce($_POST['claude_contact_meta_nonce'], 'claude_contact_meta_nonce')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_page', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['contact_email'])) {
+        update_post_meta($post_id, 'contact_email', sanitize_email($_POST['contact_email']));
+    }
+    if (isset($_POST['contact_phone'])) {
+        update_post_meta($post_id, 'contact_phone', sanitize_text_field($_POST['contact_phone']));
+    }
+    if (isset($_POST['contact_address'])) {
+        update_post_meta($post_id, 'contact_address', sanitize_text_field($_POST['contact_address']));
+    }
+}
+add_action('save_post', 'claude_shopping_save_contact_meta');
+
+/**
  * REST Endpoint to Handle Contact Form Submissions
  */
 function claude_shopping_register_contact_endpoint() {
