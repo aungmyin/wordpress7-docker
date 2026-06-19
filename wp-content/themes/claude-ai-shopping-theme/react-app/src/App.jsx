@@ -12,6 +12,8 @@ import ContactPage from './pages/ContactPage'
 import NotFound from './pages/NotFound'
 import { CartProvider } from './hooks/useCart'
 
+console.log('🔴 App.jsx is loading...')
+
 // Loading fallback component
 function PageLoader() {
   return (
@@ -28,37 +30,44 @@ function PageLoader() {
 
 // Register Service Worker for caching
 if ('serviceWorker' in navigator) {
+  console.log('📋 Attempting to register service worker...')
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/wp-content/themes/claude-ai-shopping-theme/sw.js')
-      .catch(() => {
-        // Service worker registration failed, continue anyway
-      })
+      .then((reg) => console.log('✅ Service worker registered:', reg))
+      .catch((err) => console.warn('⚠️ Service worker registration failed:', err))
   })
 }
 
 export default function App() {
+  console.log('🟢 App function executing')
+
   return (
-    <CartProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-1">
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/category/:categoryId" element={<CategoryPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </CartProvider>
+    <div style={{background: 'white', padding: '20px', textAlign: 'center'}}>
+      <h1 style={{color: 'red', fontSize: '30px'}}>🎉 REACT IS WORKING!</h1>
+      <p style={{color: 'blue', fontSize: '18px'}}>If you see this in RED text, React is rendering successfully.</p>
+
+      <CartProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen bg-white">
+            <Navbar />
+            <main className="flex-1 bg-gray-50">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/product/:id" element={<ProductPage />} />
+                  <Route path="/category/:categoryId" element={<CategoryPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </CartProvider>
+    </div>
   )
 }

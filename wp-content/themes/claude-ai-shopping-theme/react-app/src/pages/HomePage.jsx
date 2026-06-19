@@ -71,10 +71,20 @@ export default function HomePage() {
     return match ? match[1] : 'Welcome'
   }
 
+  React.useEffect(() => {
+    console.log('📄 HomePage mounted')
+    console.log('Page data:', page)
+    console.log('Products:', products)
+    console.log('Loading:', loading)
+  }, [page, products, loading])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading home page...</p>
+        </div>
       </div>
     )
   }

@@ -14,14 +14,10 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       output: {
+        format: 'iife',
+        name: 'ClaudeShoppingTheme',
         entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-        // Code splitting strategy for better caching
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['zustand', 'axios'],
-        },
       },
     },
   },
