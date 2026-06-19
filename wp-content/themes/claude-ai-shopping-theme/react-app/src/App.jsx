@@ -8,6 +8,7 @@ import CategoryPage from './pages/CategoryPage'
 import AboutPage from './pages/AboutPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
+import ContactPage from './pages/ContactPage'
 import NotFound from './pages/NotFound'
 import { CartProvider } from './hooks/useCart'
 
@@ -23,6 +24,7 @@ export default function App() {
               <Route path="/product/:id" element={<ProductPage />} />
               <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="*" element={<NotFound />} />

@@ -403,6 +403,70 @@ function claude_shopping_get_categories() {
     }, $categories);
 }
 
+/**
+ * REST Endpoint to Get Single Product by ID
+ */
+function claude_shopping_register_product_endpoint() {
+    register_rest_route('claude-shopping/v1', '/product/(?P<id>\d+)', [
+        'methods' => 'GET',
+        'callback' => 'claude_shopping_get_single_product',
+        'permission_callback' => '__return_true',
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_register_product_endpoint');
+
+function claude_shopping_get_single_product($request) {
+    $product_id = intval($request->get_param('id'));
+    $product = wc_get_product($product_id);
+
+    if (!$product) {
+        return new \WP_Error('product_not_found', 'Product not found', ['status' => 404]);
+    }
+
+    $in_stock = $product->get_stock_status() === 'instock' && ($product->get_stock_quantity() === null || $product->get_stock_quantity() > 0);
+
+    $product_data = [
+        'id' => $product->get_id(),
+        'name' => $product->get_name(),
+        'description' => wp_kses_post($product->get_description()),
+        'short_description' => wp_kses_post($product->get_short_description()),
+        'price' => $product->get_price(),
+        'regular_price' => $product->get_regular_price(),
+        'sale_price' => $product->get_sale_price(),
+        'sku' => $product->get_sku(),
+        'stock_status' => $product->get_stock_status(),
+        'stock_quantity' => $product->get_stock_quantity() ?? 0,
+        'in_stock' => $in_stock,
+        'image' => wp_get_attachment_url($product->get_image_id()),
+        'type' => $product->get_type(),
+        'permalink' => $product->get_permalink(),
+        'categories' => array_map(function($cat) {
+            return [
+                'id' => $cat->term_id,
+                'name' => $cat->name,
+            ];
+        }, $product->get_category_ids() ? array_map('get_term', $product->get_category_ids()) : []),
+    ];
+
+    if ($product->is_type('variable')) {
+        $variations = [];
+        foreach ($product->get_children() as $variation_id) {
+            $variation = wc_get_product($variation_id);
+            if ($variation) {
+                $variations[] = [
+                    'id' => $variation->get_id(),
+                    'attributes' => $variation->get_attributes(),
+                    'price' => $variation->get_price(),
+                    'stock_quantity' => $variation->get_stock_quantity(),
+                ];
+            }
+        }
+        $product_data['variations'] = $variations;
+    }
+
+    return $product_data;
+}
+
 add_action('admin_menu', function() {
     add_submenu_page(
         'woocommerce',
@@ -550,4 +614,66 @@ function claude_shopping_generate_demo_products() {
     }
 
     return ['success' => true, 'simple_products_created' => $simple_count, 'variable_products_created' => $variable_count, 'total' => $simple_count + $variable_count];
+}
+
+/**
+ * REST Endpoint to Handle Contact Form Submissions
+ */
+function claude_shopping_register_contact_endpoint() {
+    register_rest_route('claude-shopping/v1', '/contact', [
+        'methods' => 'POST',
+        'callback' => 'claude_shopping_handle_contact_form',
+        'permission_callback' => function($request) {
+            $nonce = $request->get_header('X-WP-Nonce');
+            return wp_verify_nonce($nonce, 'wp_rest');
+        },
+    ]);
+}
+add_action('rest_api_init', 'claude_shopping_register_contact_endpoint');
+
+function claude_shopping_handle_contact_form($request) {
+    $body = $request->get_json_params();
+
+    $name = sanitize_text_field($body['name'] ?? '');
+    $email = sanitize_email($body['email'] ?? '');
+    $phone = sanitize_text_field($body['phone'] ?? '');
+    $subject = sanitize_text_field($body['subject'] ?? '');
+    $message = sanitize_textarea_field($body['message'] ?? '');
+
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+        return new \WP_Error('missing_fields', 'Please fill in all required fields', ['status' => 400]);
+    }
+
+    if (!is_email($email)) {
+        return new \WP_Error('invalid_email', 'Please provide a valid email address', ['status' => 400]);
+    }
+
+    $admin_email = get_option('admin_email');
+    $site_name = get_option('blogname');
+
+    $email_subject = "New Contact Form Enquiry - {$subject}";
+
+    $email_body = "New contact form submission:\n\n";
+    $email_body .= "Name: {$name}\n";
+    $email_body .= "Email: {$email}\n";
+    if (!empty($phone)) {
+        $email_body .= "Phone: {$phone}\n";
+    }
+    $email_body .= "Subject: {$subject}\n\n";
+    $email_body .= "Message:\n{$message}\n\n";
+    $email_body .= "---\n";
+    $email_body .= "This message was sent from {$site_name}";
+
+    $headers = ["Content-Type: text/plain; charset=UTF-8", "From: {$name} <{$email}>"];
+
+    $mail_sent = wp_mail($admin_email, $email_subject, $email_body, $headers);
+
+    if (!$mail_sent) {
+        return new \WP_Error('email_failed', 'Failed to send your message. Please try again later.', ['status' => 500]);
+    }
+
+    return [
+        'success' => true,
+        'message' => 'Your enquiry has been sent successfully. We will get back to you soon.',
+    ];
 }

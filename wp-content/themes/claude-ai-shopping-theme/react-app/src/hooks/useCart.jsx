@@ -192,7 +192,7 @@ export function useProduct(productId) {
       setLoading(true)
       setError(null)
       try {
-        const response = await axios.get(`${API_URL}/products/${productId}`)
+        const response = await axios.get(`${API_URL}/product/${productId}`)
         setProduct(response.data)
       } catch (err) {
         setError(err.message)
