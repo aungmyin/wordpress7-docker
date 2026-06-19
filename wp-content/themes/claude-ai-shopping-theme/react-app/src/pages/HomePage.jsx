@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useCart'
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
+
   const [page, setPage] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categories, setCategories] = useState([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
 
-  const { products, loading: productsLoading } = useProducts({ per_page: 8 })
+  const { products, loading: productsLoading } = useProducts({
+    per_page: 12,
+    search: searchQuery,
+  })
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -107,7 +113,8 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Features Section */}
+        {/* Features Section - Hidden during search */}
+        {!searchQuery && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition">
             <div className="flex justify-center mb-4">
@@ -139,11 +146,27 @@ export default function HomePage() {
             <p className="text-gray-600">Dedicated customer support ready to help anytime</p>
           </div>
         </div>
+        )}
 
-        {/* Featured Products Section */}
+        {/* Featured Products / Search Results Section */}
         <div className="mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-2 text-center">Featured Products</h2>
-          <p className="text-gray-600 text-center mb-12">Discover our best-selling items</p>
+          {searchQuery ? (
+            <>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2 text-center">
+                Search Results for "{searchQuery}"
+              </h2>
+              <p className="text-gray-600 text-center mb-12">
+                {products.length > 0
+                  ? `Found ${products.length} product${products.length !== 1 ? 's' : ''}`
+                  : 'No products found matching your search'}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2 text-center">Featured Products</h2>
+              <p className="text-gray-600 text-center mb-12">Discover our best-selling items</p>
+            </>
+          )}
 
           {productsLoading ? (
             <div className="text-center py-12">
@@ -161,17 +184,28 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="text-center">
-            <Link
-              to="/"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
-            >
-              View All Products
-            </Link>
+          <div className="text-center space-x-4">
+            {searchQuery && (
+              <Link
+                to="/"
+                className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              >
+                ← Back to Home
+              </Link>
+            )}
+            {!searchQuery && (
+              <Link
+                to="/"
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              >
+                View All Products
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Categories Section */}
+        {/* Categories Section - Hidden during search */}
+        {!searchQuery && (
         <div className="bg-white rounded-lg shadow-md p-12 mb-16">
           <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Shop by Category</h2>
 
@@ -226,8 +260,10 @@ export default function HomePage() {
             </div>
           )}
         </div>
+        )}
 
-        {/* Newsletter Section */}
+        {/* Newsletter Section - Hidden during search */}
+        {!searchQuery && (
         <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg shadow-md p-12 text-center">
           <h2 className="text-3xl font-bold mb-4">Stay Updated</h2>
           <p className="text-lg mb-6 max-w-2xl mx-auto">
@@ -244,6 +280,7 @@ export default function HomePage() {
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   )
