@@ -39,35 +39,30 @@ if ('serviceWorker' in navigator) {
 }
 
 export default function App() {
-  console.log('🟢 App function executing')
+  console.log('🟢 App mounted - React is working!')
 
   return (
-    <div style={{background: 'white', padding: '20px', textAlign: 'center'}}>
-      <h1 style={{color: 'red', fontSize: '30px'}}>🎉 REACT IS WORKING!</h1>
-      <p style={{color: 'blue', fontSize: '18px'}}>If you see this in RED text, React is rendering successfully.</p>
-
-      <CartProvider>
-        <Router>
-          <div className="flex flex-col min-h-screen bg-white">
-            <Navbar />
-            <main className="flex-1 bg-gray-50">
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/product/:id" element={<ProductPage />} />
-                  <Route path="/category/:categoryId" element={<CategoryPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </CartProvider>
-    </div>
+    <CartProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen bg-white">
+          <Navbar />
+          <main className="flex-1 bg-gray-50">
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/category/:categoryId" element={<CategoryPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </CartProvider>
   )
 }
