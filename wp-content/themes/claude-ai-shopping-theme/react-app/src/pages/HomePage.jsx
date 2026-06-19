@@ -14,10 +14,8 @@ export default function HomePage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true)
 
   // Load fewer products initially for faster page load
-  const [productsPage, setProductsPage] = React.useState(1)
   const { products, loading: productsLoading } = useProducts({
     per_page: 8,
-    page: productsPage,
     search: searchQuery,
   })
 
@@ -187,25 +185,21 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="text-center space-x-4">
-            {searchQuery && (
+          <div className="text-center">
+            {searchQuery ? (
               <Link
                 to="/"
                 className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition"
               >
                 ← Back to Home
               </Link>
-            )}
-            {!searchQuery && products.length > 0 && (
-              <>
-                <button
-                  onClick={() => setProductsPage(prev => prev + 1)}
-                  disabled={productsLoading}
-                  className="inline-block bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition"
-                >
-                  {productsLoading ? 'Loading...' : '📦 Load More Products'}
-                </button>
-              </>
+            ) : (
+              <Link
+                to="/"
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              >
+                View All Products
+              </Link>
             )}
           </div>
         </div>
