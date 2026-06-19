@@ -86,6 +86,51 @@ function claude_shopping_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'claude_shopping_enqueue_scripts');
 
+/**
+ * Preload Critical Assets for Performance
+ */
+function claude_shopping_preload_assets() {
+    if (is_admin()) {
+        return;
+    }
+
+    $react_build_dir = CLAUDE_SHOPPING_THEME_DIR . '/react-app/dist';
+    $react_manifest = $react_build_dir . '/manifest.json';
+
+    if (file_exists($react_manifest)) {
+        $manifest = json_decode(file_get_contents($react_manifest), true);
+
+        // Preload main JS bundle
+        if (isset($manifest['index.html']['file'])) {
+            echo '<link rel="preload" href="' . esc_url(CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $manifest['index.html']['file']) . '" as="script" />' . "\n";
+        }
+
+        // Preload main CSS bundle
+        if (isset($manifest['index.html']['css']) && is_array($manifest['index.html']['css'])) {
+            foreach ($manifest['index.html']['css'] as $css_file) {
+                echo '<link rel="preload" href="' . esc_url(CLAUDE_SHOPPING_THEME_URL . '/react-app/dist/' . $css_file) . '" as="style" />' . "\n";
+            }
+        }
+    }
+
+    // DNS prefetch for external resources
+    echo '<link rel="dns-prefetch" href="//fonts.googleapis.com" />' . "\n";
+    echo '<link rel="dns-prefetch" href="//maps.googleapis.com" />' . "\n";
+}
+add_action('wp_head', 'claude_shopping_preload_assets', 1);
+
+/**
+ * Enable gzip compression in headers
+ */
+function claude_shopping_enable_compression() {
+    if (!headers_sent()) {
+        if (strpos($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') !== false) {
+            ob_start('ob_gzhandler');
+        }
+    }
+}
+add_action('wp', 'claude_shopping_enable_compression');
+
 function claude_shopping_disable_woo_assets() {
     if (function_exists('wp_dequeue_script')) {
         wp_dequeue_script('wc-add-to-cart');

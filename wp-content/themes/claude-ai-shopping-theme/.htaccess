@@ -1,0 +1,50 @@
+# Enable gzip compression for text files
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/x-font-ttf
+  AddOutputFilterByType DEFLATE application/x-font-otf
+  AddOutputFilterByType DEFLATE font/ttf
+  AddOutputFilterByType DEFLATE font/otf
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Enable browser caching
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 2 days"
+  ExpiresByType text/html "access plus 2 hours"
+  ExpiresByType application/javascript "access plus 30 days"
+  ExpiresByType text/css "access plus 30 days"
+  ExpiresByType image/gif "access plus 60 days"
+  ExpiresByType image/jpeg "access plus 60 days"
+  ExpiresByType image/png "access plus 60 days"
+  ExpiresByType image/webp "access plus 60 days"
+  ExpiresByType image/svg+xml "access plus 60 days"
+  ExpiresByType image/x-icon "access plus 60 days"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/otf "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+</IfModule>
+
+# Add cache control headers
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|gif|png|jpe?g|pdf|svg|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+  <FilesMatch "\.woff2?$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
