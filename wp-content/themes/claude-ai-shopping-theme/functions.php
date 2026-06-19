@@ -662,9 +662,10 @@ function claude_shopping_generate_demo_products() {
 }
 
 /**
- * Register Meta Fields for Contact Page
+ * Register Meta Fields for Contact & About Pages
  */
-function claude_shopping_register_contact_meta() {
+function claude_shopping_register_page_meta() {
+    // Contact page fields
     register_meta('post', 'contact_email', [
         'type' => 'string',
         'single' => true,
@@ -680,8 +681,35 @@ function claude_shopping_register_contact_meta() {
         'single' => true,
         'show_in_rest' => true,
     ]);
+
+    // About page fields
+    register_meta('post', 'about_hero_title', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'about_hero_subtitle', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'about_mission', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'about_vision', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
+    register_meta('post', 'about_values', [
+        'type' => 'string',
+        'single' => true,
+        'show_in_rest' => true,
+    ]);
 }
-add_action('init', 'claude_shopping_register_contact_meta');
+add_action('init', 'claude_shopping_register_page_meta');
 
 /**
  * Add Meta Box for Contact Page Fields
@@ -801,6 +829,149 @@ function claude_shopping_save_contact_meta($post_id) {
     }
 }
 add_action('save_post', 'claude_shopping_save_contact_meta');
+
+/**
+ * Add Meta Box for About Page Fields
+ */
+function claude_shopping_add_about_meta_box() {
+    add_meta_box(
+        'about_info',
+        'About Page Sections',
+        'claude_shopping_about_meta_box_callback',
+        'page',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'claude_shopping_add_about_meta_box');
+
+function claude_shopping_about_meta_box_callback($post) {
+    $about_hero_title = get_post_meta($post->ID, 'about_hero_title', true);
+    $about_hero_subtitle = get_post_meta($post->ID, 'about_hero_subtitle', true);
+    $about_mission = get_post_meta($post->ID, 'about_mission', true);
+    $about_vision = get_post_meta($post->ID, 'about_vision', true);
+    $about_values = get_post_meta($post->ID, 'about_values', true);
+
+    wp_nonce_field('claude_about_meta_nonce', 'claude_about_meta_nonce');
+    ?>
+    <style>
+        .about-meta-field {
+            margin-bottom: 15px;
+        }
+        .about-meta-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .about-meta-field input,
+        .about-meta-field textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+        }
+        .about-meta-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .about-meta-notice {
+            background: #f0f7ff;
+            border-left: 4px solid #0073aa;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+
+    <div class="about-meta-notice">
+        <strong>ℹ️ About Page Layout:</strong> Edit the sections below to create a nice about page with hero section, mission, vision, and values displayed in a 3-column layout.
+    </div>
+
+    <div class="about-meta-field">
+        <label for="about_hero_title">Hero Title</label>
+        <input
+            type="text"
+            id="about_hero_title"
+            name="about_hero_title"
+            value="<?php echo esc_attr($about_hero_title); ?>"
+            placeholder="About Our Company"
+        />
+    </div>
+
+    <div class="about-meta-field">
+        <label for="about_hero_subtitle">Hero Subtitle</label>
+        <textarea
+            id="about_hero_subtitle"
+            name="about_hero_subtitle"
+            placeholder="A brief description of your company"
+        ><?php echo esc_textarea($about_hero_subtitle); ?></textarea>
+    </div>
+
+    <div class="about-meta-field">
+        <label for="about_mission">Our Mission</label>
+        <textarea
+            id="about_mission"
+            name="about_mission"
+            placeholder="What is your company's mission?"
+        ><?php echo esc_textarea($about_mission); ?></textarea>
+    </div>
+
+    <div class="about-meta-field">
+        <label for="about_vision">Our Vision</label>
+        <textarea
+            id="about_vision"
+            name="about_vision"
+            placeholder="What is your company's vision for the future?"
+        ><?php echo esc_textarea($about_vision); ?></textarea>
+    </div>
+
+    <div class="about-meta-field">
+        <label for="about_values">Our Values</label>
+        <textarea
+            id="about_values"
+            name="about_values"
+            placeholder="What values does your company hold?"
+        ><?php echo esc_textarea($about_values); ?></textarea>
+    </div>
+    <?php
+}
+
+/**
+ * Save About Page Meta Fields
+ */
+function claude_shopping_save_about_meta($post_id) {
+    if (!isset($_POST['claude_about_meta_nonce']) || !wp_verify_nonce($_POST['claude_about_meta_nonce'], 'claude_about_meta_nonce')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_page', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['about_hero_title'])) {
+        update_post_meta($post_id, 'about_hero_title', sanitize_text_field($_POST['about_hero_title']));
+    }
+    if (isset($_POST['about_hero_subtitle'])) {
+        update_post_meta($post_id, 'about_hero_subtitle', sanitize_textarea_field($_POST['about_hero_subtitle']));
+    }
+    if (isset($_POST['about_mission'])) {
+        update_post_meta($post_id, 'about_mission', sanitize_textarea_field($_POST['about_mission']));
+    }
+    if (isset($_POST['about_vision'])) {
+        update_post_meta($post_id, 'about_vision', sanitize_textarea_field($_POST['about_vision']));
+    }
+    if (isset($_POST['about_values'])) {
+        update_post_meta($post_id, 'about_values', sanitize_textarea_field($_POST['about_values']));
+    }
+}
+add_action('save_post', 'claude_shopping_save_about_meta');
 
 /**
  * REST Endpoint to Handle Contact Form Submissions

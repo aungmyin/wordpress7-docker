@@ -10,13 +10,24 @@ export default function AboutPage() {
     const fetchPage = async () => {
       try {
         const response = await fetch(
-          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/claude-shopping/v1/page/about`
+          `${window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'}/wp/v2/pages?slug=about`
         )
         if (!response.ok) {
           throw new Error('Page not found')
         }
         const data = await response.json()
-        setPage(data)
+        if (data.length > 0) {
+          const pageData = data[0]
+          setPage({
+            title: pageData.title.rendered,
+            content: pageData.content.rendered,
+            heroTitle: pageData.meta?.about_hero_title || pageData.title.rendered,
+            heroSubtitle: pageData.meta?.about_hero_subtitle || 'Learn more about our company',
+            mission: pageData.meta?.about_mission || '',
+            vision: pageData.meta?.about_vision || '',
+            values: pageData.meta?.about_values || '',
+          })
+        }
       } catch (err) {
         setError(err.message)
       } finally {
@@ -52,7 +63,7 @@ export default function AboutPage() {
               <li><strong>Slug:</strong> "about"</li>
               <li><strong>Content:</strong> Add your about page content</li>
             </ul>
-            <p className="text-sm">Once created and published, it will automatically appear here!</p>
+            <p className="text-sm">Once created and published, scroll down to "About Page Sections" to add Mission, Vision, and Values!</p>
           </div>
           <Link
             to="/"
@@ -71,25 +82,76 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      {/* Hero Section - Using Custom Fields */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl font-bold mb-4">{page.title}</h1>
+          <h1 className="text-5xl font-bold mb-4">{page.heroTitle}</h1>
           <p className="text-xl text-blue-100">
-            Learn more about our company
+            {page.heroSubtitle}
           </p>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white rounded-lg shadow-md p-8 mb-12">
           {/* Display WordPress Page Content */}
           <div
             className="prose prose-lg max-w-none"
             dangerouslySetInnerHTML={{ __html: page.content }}
           />
         </div>
+
+        {/* 3-Column Section: Mission, Vision, Values */}
+        {(page.mission || page.vision || page.values) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            {/* Mission Card */}
+            {page.mission && (
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="flex justify-center mb-4">
+                  <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Our Mission</h3>
+                <p className="text-gray-600 text-center whitespace-pre-wrap leading-relaxed">
+                  {page.mission}
+                </p>
+              </div>
+            )}
+
+            {/* Vision Card */}
+            {page.vision && (
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="flex justify-center mb-4">
+                  <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Our Vision</h3>
+                <p className="text-gray-600 text-center whitespace-pre-wrap leading-relaxed">
+                  {page.vision}
+                </p>
+              </div>
+            )}
+
+            {/* Values Card */}
+            {page.values && (
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="flex justify-center mb-4">
+                  <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Our Values</h3>
+                <p className="text-gray-600 text-center whitespace-pre-wrap leading-relaxed">
+                  {page.values}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* CTA Section */}
         <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg shadow-md p-12 text-center">
