@@ -12,10 +12,9 @@ export default defineConfig({
     minify: 'terser',
     sourcemap: false,
     target: 'es2020',
+    modulePreload: false,
     rollupOptions: {
       output: {
-        format: 'iife',
-        name: 'ClaudeShoppingTheme',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
