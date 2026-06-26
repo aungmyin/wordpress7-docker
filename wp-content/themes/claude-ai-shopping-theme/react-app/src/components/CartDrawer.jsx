@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../hooks/useCart'
 
 export default function CartDrawer({ isOpen, onClose }) {
-  const cartState = useCart()
-  const { items, total, count, loading, removeFromCart, updateCart } = cartState
+  const items = useCart((state) => state.items)
+  const total = useCart((state) => state.total)
+  const count = useCart((state) => state.count)
+  const loading = useCart((state) => state.loading)
+  const removeFromCart = useCart((state) => state.removeFromCart)
+  const updateCart = useCart((state) => state.updateCart)
   const [updatingKey, setUpdatingKey] = useState(null)
 
   const handleQuantityChange = async (key, newQuantity) => {
