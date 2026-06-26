@@ -3,22 +3,51 @@ import { create } from 'zustand'
 import axios from 'axios'
 
 const REST_URL = window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'
-const API_URL = `${REST_URL}/claude-shopping/v1`
-const NONCE = window.claudeShoppingTheme?.nonce || ''
+const STORE_API_URL = `${REST_URL}/wc/store/v1`
+const CART_NONCE = window.claudeShoppingTheme?.cartNonce || ''
 
-// Configure axios instance
+// Configure axios instance for WooCommerce Store API
 const axiosInstance = axios.create({
+  baseURL: STORE_API_URL,
   headers: {
-    'X-WP-Nonce': NONCE,
     'Content-Type': 'application/json',
+    'Nonce': CART_NONCE,
   },
   credentials: 'include',
 })
 
+// Transform WC Store API cart format to our format
+const transformCartData = (wcCart) => {
+  if (!wcCart) return { items: [], total: '$0', count: 0 }
+
+  const items = (wcCart.items || []).map(item => ({
+    key: item.key,
+    product_id: item.id,
+    quantity: item.quantity,
+    total: item.totals?.line_total || '0',
+    product_name: item.name,
+    product_image: item.images?.[0]?.src || null,
+    price: item.prices?.price || '0',
+  }))
+
+  // Format total with currency
+  const totalsData = wcCart.totals || {}
+  const currencyPrefix = totalsData.currency_prefix || ''
+  const currencySuffix = totalsData.currency_suffix || ''
+  const totalPrice = totalsData.total_price || '0'
+  const formattedTotal = `${currencyPrefix}${totalPrice}${currencySuffix}`
+
+  return {
+    items,
+    total: formattedTotal || '$0',
+    count: wcCart.items_count || 0,
+  }
+}
+
 // Zustand store for cart state
 const useCartStore = create((set, get) => ({
   items: [],
-  total: 0,
+  total: '$0',
   count: 0,
   loading: false,
   error: null,
@@ -28,19 +57,19 @@ const useCartStore = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       console.log('🛒 Adding to cart:', { productId, quantity })
-      const response = await axiosInstance.post(`${REST_URL}/claude-shopping/v1/cart`, {
-        action: 'add',
-        product_id: productId,
+      const response = await axiosInstance.post('/cart/add-item', {
+        id: productId,
         quantity,
       })
       console.log('✅ Add to cart success:', response.data)
+      const cartData = transformCartData(response.data)
       set({
-        items: response.data.items || [],
-        total: response.data.total || 0,
-        count: response.data.count || 0,
+        items: cartData.items,
+        total: cartData.total,
+        count: cartData.count,
         loading: false,
       })
-      return response.data
+      return cartData
     } catch (error) {
       console.error('❌ Add to cart error:', error.response?.data || error.message)
       const errorMsg = error.response?.data?.message || error.message || 'Failed to add to cart'
@@ -56,18 +85,18 @@ const useCartStore = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       console.log('📝 Updating cart:', { cartItemKey, quantity })
-      const response = await axiosInstance.post(`${REST_URL}/claude-shopping/v1/cart`, {
-        action: 'update',
-        cart_item_key: cartItemKey,
+      const response = await axiosInstance.post(`/cart/items/${cartItemKey}`, {
         quantity,
       })
+      console.log('✅ Update success:', response.data)
+      const cartData = transformCartData(response.data)
       set({
-        items: response.data.items || [],
-        total: response.data.total || 0,
-        count: response.data.count || 0,
+        items: cartData.items,
+        total: cartData.total,
+        count: cartData.count,
         loading: false,
       })
-      return response.data
+      return cartData
     } catch (error) {
       console.error('❌ Update cart error:', error)
       set({
@@ -82,17 +111,18 @@ const useCartStore = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       console.log('🗑️ Removing from cart:', cartItemKey)
-      const response = await axiosInstance.post(`${REST_URL}/claude-shopping/v1/cart`, {
-        action: 'remove',
-        cart_item_key: cartItemKey,
+      const response = await axiosInstance.post('/cart/remove-item', {
+        key: cartItemKey,
       })
+      console.log('✅ Remove success:', response.data)
+      const cartData = transformCartData(response.data)
       set({
-        items: response.data.items || [],
-        total: response.data.total || 0,
-        count: response.data.count || 0,
+        items: cartData.items,
+        total: cartData.total,
+        count: cartData.count,
         loading: false,
       })
-      return response.data
+      return cartData
     } catch (error) {
       console.error('❌ Remove from cart error:', error)
       set({
@@ -106,26 +136,25 @@ const useCartStore = create((set, get) => ({
   getCart: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await axiosInstance.post(`${REST_URL}/claude-shopping/v1/cart`, {
-        action: 'get',
-      })
+      const response = await axiosInstance.get('/cart')
       console.log('📦 Get cart success:', response.data)
+      const cartData = transformCartData(response.data)
       set({
-        items: response.data.items || [],
-        total: response.data.total || 0,
-        count: response.data.count || 0,
+        items: cartData.items,
+        total: cartData.total,
+        count: cartData.count,
         loading: false,
         isInitialized: true,
       })
-      return response.data
+      return cartData
     } catch (error) {
-      console.error('❌ Get cart error:', error)
+      console.error('⚠️ Get cart error:', error.message)
       set({
-        error: error.response?.data?.message || 'Failed to load cart',
         loading: false,
         isInitialized: true,
       })
-      return { items: [], total: 0, count: 0 }
+      // Return empty cart on error instead of throwing
+      return { items: [], total: '$0', count: 0 }
     }
   },
 
