@@ -19,9 +19,7 @@ export default function App() {
       <div className="flex flex-col min-h-screen bg-white">
         <Navbar />
         <main className="flex-1 bg-gray-50">
-          <div style={{ padding: '20px', color: '#333' }}>
-            <h2>Products go here - HomePage not rendering yet</h2>
-          </div>
+          <HomePage />
         </main>
       </div>
     </CartProvider>

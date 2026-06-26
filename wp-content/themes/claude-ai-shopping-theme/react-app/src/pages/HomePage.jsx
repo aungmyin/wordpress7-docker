@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useCart'
 
 export default function HomePage() {
-  const [searchParams] = useSearchParams()
+  // Get search query from URL without Router
+  const searchParams = new URLSearchParams(window.location.search)
   const searchQuery = searchParams.get('search') || ''
 
   const [page, setPage] = useState(null)
@@ -78,6 +78,16 @@ export default function HomePage() {
     console.log('Loading:', loading)
   }, [page, products, loading])
 
+  // Temporary: Just return simple test
+  return (
+    <div style={{ padding: '40px', background: '#fff' }}>
+      <h2>HomePage Simple Test</h2>
+      <p>Page loaded: {page ? 'yes' : 'no'}</p>
+      <p>Products count: {products.length}</p>
+      <p>Loading: {productsLoading ? 'yes' : 'no'}</p>
+    </div>
+  )
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -105,18 +115,18 @@ export default function HomePage() {
               {homeSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/"
-                className="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition"
+              <a
+                href="/"
+                className="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition cursor-pointer"
               >
                 Shop Now
-              </Link>
-              <Link
-                to="/about"
-                className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              </a>
+              <a
+                href="/about"
+                className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition cursor-pointer"
               >
                 Learn More
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -197,19 +207,19 @@ export default function HomePage() {
 
           <div className="text-center">
             {searchQuery ? (
-              <Link
-                to="/"
-                className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              <a
+                href="/"
+                className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition cursor-pointer"
               >
                 ← Back to Home
-              </Link>
+              </a>
             ) : (
-              <Link
-                to="/"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
+              <a
+                href="/"
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition cursor-pointer"
               >
                 View All Products
-              </Link>
+              </a>
             )}
           </div>
         </div>
@@ -251,10 +261,10 @@ export default function HomePage() {
                 const iconPath = icons[index % icons.length]
 
                 return (
-                  <Link
+                  <a
                     key={category.id}
-                    to={`/category/${category.id}`}
-                    className={`bg-gradient-to-r ${colorClass} text-white p-8 rounded-lg text-center transition transform hover:scale-105`}
+                    href={`/category/${category.id}`}
+                    className={`bg-gradient-to-r ${colorClass} text-white p-8 rounded-lg text-center transition transform hover:scale-105 block cursor-pointer`}
                   >
                     <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
@@ -264,7 +274,7 @@ export default function HomePage() {
                       <p className="opacity-90 mt-2">{category.description}</p>
                     )}
                     <p className="text-sm opacity-75 mt-1">({category.count} products)</p>
-                  </Link>
+                  </a>
                 )
               })}
             </div>
