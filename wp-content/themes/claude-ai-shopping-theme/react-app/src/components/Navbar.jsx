@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
+import { useCart } from '../hooks/useCart'
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false)
-  const cartCount = 0  // TODO: Connect to useCart
+  const cartCount = useCart((state) => state.count || 0)
 
   const handleSearch = (e) => {
     e.preventDefault()

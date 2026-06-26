@@ -1,5 +1,9 @@
 import React from 'react'
 import Navbar from './components/Navbar'
+import HomePage from './pages/HomePage'
+import { CartProvider } from './hooks/useCart'
+
+console.log('🎯 App.jsx loaded')
 
 // Register Service Worker for caching
 if ('serviceWorker' in navigator) {
@@ -10,11 +14,16 @@ if ('serviceWorker' in navigator) {
 }
 
 export default function App() {
-  return React.createElement('div', { style: { minHeight: '100vh', background: '#fff' } },
-    React.createElement(Navbar, null),
-    React.createElement('div', { style: { padding: '20px', background: '#2196F3', color: 'white' } },
-      React.createElement('h1', null, 'TEST WITH NAVBAR'),
-      React.createElement('p', null, 'If Navbar renders, we can see it.')
-    )
+  return (
+    <CartProvider>
+      <div className="flex flex-col min-h-screen bg-white">
+        <Navbar />
+        <main className="flex-1 bg-gray-50">
+          <div style={{ padding: '20px', color: '#333' }}>
+            <h2>Products go here - HomePage not rendering yet</h2>
+          </div>
+        </main>
+      </div>
+    </CartProvider>
   )
 }

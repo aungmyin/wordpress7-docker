@@ -2,16 +2,25 @@ import React, { createContext, useContext, useEffect } from 'react'
 import { create } from 'zustand'
 import axios from 'axios'
 
-const REST_URL = window.claudeShoppingTheme?.restUrl || '/index.php/wp-json'
+// Safe access to window object
+const getConfig = () => {
+  if (typeof window === 'undefined') return {}
+  return window.claudeShoppingTheme || {}
+}
+
+const config = getConfig()
+const REST_URL = config.restUrl || '/index.php/wp-json'
 const STORE_API_URL = `${REST_URL}/wc/store/v1`
-const CART_NONCE = window.claudeShoppingTheme?.cartNonce || ''
+const CART_NONCE = config.cartNonce || ''
+
+console.log('🛒 Cart config:', { REST_URL, STORE_API_URL, CART_NONCE })
 
 // Configure axios instance for WooCommerce Store API
 const axiosInstance = axios.create({
   baseURL: STORE_API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Nonce': CART_NONCE,
+    ...(CART_NONCE ? { 'Nonce': CART_NONCE } : {}),
   },
   credentials: 'include',
 })
