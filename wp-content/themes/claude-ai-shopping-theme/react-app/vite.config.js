@@ -12,9 +12,11 @@ export default defineConfig({
     minify: 'terser',
     sourcemap: false,
     target: 'es2020',
-    modulePreload: false,
     rollupOptions: {
       output: {
+        format: 'iife',
+        name: 'ClaudeShoppingTheme',
+        inlineDynamicImports: true,
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
@@ -27,9 +29,5 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    proxy: {
-      '/wp-admin': 'http://localhost',
-      '/wp-json': 'http://localhost',
-    },
   },
 })

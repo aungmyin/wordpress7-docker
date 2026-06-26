@@ -1,35 +1,33 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../hooks/useCart'
-import CartDrawer from './CartDrawer'
 
 export default function Navbar() {
-  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false)
-  const cartCount = useCart((state) => state.count)
+  const cartCount = 0  // TODO: Connect to useCart
 
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery)}`)
+      window.location.href = `/?search=${encodeURIComponent(searchQuery)}`
       setSearchQuery('')
       setIsMobileMenuOpen(false)
     }
   }
 
+  const navTo = (path) => {
+    window.location.href = path
+  }
+
   return (
-    <>
-    <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
     <nav className="bg-white shadow-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <a href="/" className="flex items-center cursor-pointer">
             <span className="text-2xl font-bold text-blue-600">Claude AI</span>
             <span className="text-sm text-gray-600 ml-1">Shopping</span>
-          </Link>
+          </a>
 
           {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 mx-8">
@@ -46,12 +44,12 @@ export default function Navbar() {
 
           {/* Menu Links & Cart */}
           <div className="flex items-center space-x-4">
-            <Link
-              to="/"
-              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline"
+            <a
+              href="/"
+              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline cursor-pointer"
             >
               Home
-            </Link>
+            </a>
 
             {/* Categories Dropdown */}
             <div className="relative group hidden sm:inline-block">
@@ -62,34 +60,34 @@ export default function Navbar() {
                 </svg>
               </button>
               <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg py-2 w-48 z-10">
-                <Link
-                  to="/category/17"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                <a
+                  href="/category/17"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
                 >
                   Electronics
-                </Link>
-                <Link
-                  to="/category/18"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                </a>
+                <a
+                  href="/category/18"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
                 >
                   Office
-                </Link>
+                </a>
               </div>
             </div>
 
-            <Link
-              to="/about"
-              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline"
+            <a
+              href="/about"
+              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline cursor-pointer"
             >
               About
-            </Link>
+            </a>
 
-            <Link
-              to="/contact"
-              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline"
+            <a
+              href="/contact"
+              className="text-gray-700 hover:text-blue-600 transition hidden sm:inline cursor-pointer"
             >
               Contact
-            </Link>
+            </a>
 
             {/* Cart Icon Button */}
             <button
@@ -150,36 +148,35 @@ export default function Navbar() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </form>
-            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600">
+            <a href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600 cursor-pointer">
               Home
-            </Link>
-            <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600">
+            </a>
+            <a href="/about" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600 cursor-pointer">
               About
-            </Link>
-            <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600">
+            </a>
+            <a href="/contact" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600 cursor-pointer">
               Contact
-            </Link>
+            </a>
             <div className="py-2 border-t">
               <p className="font-semibold text-gray-700 py-2">Categories</p>
-              <Link
-                to="/category/17"
+              <a
+                href="/category/17"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block pl-4 py-2 text-gray-600 hover:text-blue-600"
+                className="block pl-4 py-2 text-gray-600 hover:text-blue-600 cursor-pointer"
               >
                 Electronics
-              </Link>
-              <Link
-                to="/category/18"
+              </a>
+              <a
+                href="/category/18"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block pl-4 py-2 text-gray-600 hover:text-blue-600"
+                className="block pl-4 py-2 text-gray-600 hover:text-blue-600 cursor-pointer"
               >
                 Office
-              </Link>
+              </a>
             </div>
           </div>
         )}
       </div>
     </nav>
-    </>
   )
 }
