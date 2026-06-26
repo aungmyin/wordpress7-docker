@@ -252,6 +252,11 @@ function claude_shopping_get_products(\WP_REST_Request $request) {
 }
 
 function claude_shopping_handle_cart(\WP_REST_Request $request) {
+    // Ensure WooCommerce is properly loaded
+    if (!function_exists('WC') || !function_exists('WC_Session_Handler')) {
+        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    }
+
     $action = $request->get_param('action');
     switch ($action) {
         case 'add':
@@ -268,63 +273,115 @@ function claude_shopping_handle_cart(\WP_REST_Request $request) {
 }
 
 function claude_shopping_get_cart() {
-    if (!class_exists('WC_Cart')) {
-        return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
+    if (!function_exists('WC')) {
+        return ['items' => [], 'total' => '$0', 'count' => 0];
     }
-    $cart = WC()->cart;
-    return [
-        'items' => array_map(function ($item) {
-            return [
-                'key' => $item['key'],
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'total' => $item['line_total'],
-                'product_name' => $item['data']->get_name(),
-                'product_image' => wp_get_attachment_url($item['data']->get_image_id()),
-                'price' => $item['data']->get_price(),
-            ];
-        }, $cart->get_cart()),
-        'total' => $cart->get_cart_total(),
-        'count' => $cart->get_cart_contents_count(),
-    ];
+
+    try {
+        $cart = WC()->cart;
+        if (!$cart) {
+            return ['items' => [], 'total' => '$0', 'count' => 0];
+        }
+
+        $cart_items = $cart->get_cart() ?: [];
+        return [
+            'items' => array_map(function ($item) {
+                return [
+                    'key' => $item['key'],
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'total' => wc_price($item['line_total'], ['echo' => false]),
+                    'product_name' => $item['data']->get_name(),
+                    'product_image' => wp_get_attachment_url($item['data']->get_image_id()),
+                    'price' => $item['data']->get_price(),
+                ];
+            }, $cart_items),
+            'total' => $cart->get_cart_total(),
+            'count' => $cart->get_cart_contents_count(),
+        ];
+    } catch (Exception $e) {
+        error_log('Cart error: ' . $e->getMessage());
+        return ['items' => [], 'total' => '$0', 'count' => 0];
+    }
 }
 
 function claude_shopping_add_to_cart(\WP_REST_Request $request) {
-    if (!class_exists('WC_Cart')) {
+    if (!function_exists('WC')) {
         return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
     }
-    $product_id = intval($request->get_param('product_id'));
-    $quantity = intval($request->get_param('quantity') ?? 1);
-    if (!$product_id) {
-        return new \WP_Error('missing_product_id', 'Product ID is required', ['status' => 400]);
+
+    try {
+        $product_id = intval($request->get_param('product_id'));
+        $quantity = intval($request->get_param('quantity') ?? 1);
+        $variation_id = intval($request->get_param('variation_id') ?? 0);
+
+        if (!$product_id) {
+            return new \WP_Error('missing_product_id', 'Product ID is required', ['status' => 400]);
+        }
+
+        // Add to WooCommerce cart
+        $cart = WC()->cart;
+        if ($cart) {
+            $result = $cart->add_to_cart($product_id, $quantity, $variation_id);
+            if (!$result) {
+                error_log("Add to cart failed for product $product_id");
+            }
+        }
+
+        return claude_shopping_get_cart();
+    } catch (Exception $e) {
+        error_log('Add to cart error: ' . $e->getMessage());
+        return new \WP_Error('add_failed', 'Failed to add product to cart: ' . $e->getMessage(), ['status' => 500]);
     }
-    WC()->cart->add_to_cart($product_id, $quantity);
-    return claude_shopping_get_cart();
 }
 
 function claude_shopping_update_cart(\WP_REST_Request $request) {
-    if (!class_exists('WC_Cart')) {
+    if (!function_exists('WC')) {
         return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
     }
-    $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
-    $quantity = intval($request->get_param('quantity'));
-    if (!$cart_item_key) {
-        return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+
+    try {
+        $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
+        $quantity = intval($request->get_param('quantity'));
+
+        if (!$cart_item_key) {
+            return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+        }
+
+        $cart = WC()->cart;
+        if ($cart) {
+            $cart->set_quantity($cart_item_key, $quantity);
+        }
+
+        return claude_shopping_get_cart();
+    } catch (Exception $e) {
+        error_log('Update cart error: ' . $e->getMessage());
+        return new \WP_Error('update_failed', 'Failed to update cart', ['status' => 500]);
     }
-    WC()->cart->set_quantity($cart_item_key, $quantity);
-    return claude_shopping_get_cart();
 }
 
 function claude_shopping_remove_from_cart(\WP_REST_Request $request) {
-    if (!class_exists('WC_Cart')) {
+    if (!function_exists('WC')) {
         return new \WP_Error('woocommerce_not_active', 'WooCommerce is not active', ['status' => 500]);
     }
-    $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
-    if (!$cart_item_key) {
-        return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+
+    try {
+        $cart_item_key = sanitize_text_field($request->get_param('cart_item_key'));
+
+        if (!$cart_item_key) {
+            return new \WP_Error('missing_cart_item_key', 'Cart item key is required', ['status' => 400]);
+        }
+
+        $cart = WC()->cart;
+        if ($cart) {
+            $cart->remove_cart_item($cart_item_key);
+        }
+
+        return claude_shopping_get_cart();
+    } catch (Exception $e) {
+        error_log('Remove from cart error: ' . $e->getMessage());
+        return new \WP_Error('remove_failed', 'Failed to remove from cart', ['status' => 500]);
     }
-    WC()->cart->remove_cart_item($cart_item_key);
-    return claude_shopping_get_cart();
 }
 
 function claude_shopping_process_checkout(\WP_REST_Request $request) {

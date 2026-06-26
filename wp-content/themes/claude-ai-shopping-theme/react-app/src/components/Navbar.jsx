@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../hooks/useCart'
+import CartDrawer from './CartDrawer'
 
 export default function Navbar() {
   const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false)
   const cartCount = useCart((state) => state.count)
 
   const handleSearch = (e) => {
@@ -18,7 +20,9 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <>
+    <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
+    <nav className="bg-white shadow-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -87,8 +91,11 @@ export default function Navbar() {
               Contact
             </Link>
 
-            {/* Cart Icon */}
-            <Link to="/cart" className="relative">
+            {/* Cart Icon Button */}
+            <button
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative hover:text-blue-600 transition"
+            >
               <svg
                 className="w-6 h-6 text-gray-700 hover:text-blue-600 transition"
                 fill="none"
@@ -103,11 +110,11 @@ export default function Navbar() {
                 />
               </svg>
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Mobile Menu Button */}
             <button
@@ -173,5 +180,6 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+    </>
   )
 }
