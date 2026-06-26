@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { useCart } from '../hooks/useCart'
 
 export default function ProductCard({ product }) {
@@ -11,7 +10,6 @@ export default function ProductCard({ product }) {
     setIsAdding(true)
     try {
       await addToCart(product.id, 1)
-      // Show success message (optional: add toast notification)
       alert('Product added to cart!')
     } catch (error) {
       alert('Failed to add product to cart')
@@ -33,7 +31,7 @@ export default function ProductCard({ product }) {
       : null
 
   return (
-    <Link to={`/product/${product.id}`} className="block">
+    <a href={`/product/${product.id}`} className="block cursor-pointer">
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
         {/* Image Container */}
         <div className="relative bg-gray-100 overflow-hidden">
@@ -97,6 +95,6 @@ export default function ProductCard({ product }) {
           </button>
         </div>
       </div>
-    </Link>
+    </a>
   )
 }

@@ -78,13 +78,45 @@ export default function HomePage() {
     console.log('Loading:', loading)
   }, [page, products, loading])
 
-  // Temporary: Just return simple test
   return (
-    <div style={{ padding: '40px', background: '#fff' }}>
-      <h2>HomePage Simple Test</h2>
-      <p>Page loaded: {page ? 'yes' : 'no'}</p>
-      <p>Products count: {products.length}</p>
-      <p>Loading: {productsLoading ? 'yes' : 'no'}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Welcome to Claude AI Shopping
+            </h1>
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Discover amazing products
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-2 text-center">Featured Products</h2>
+          <p className="text-gray-600 text-center mb-12">Discover our best-selling items</p>
+
+          {productsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No products available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 
