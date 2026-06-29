@@ -9,10 +9,12 @@ export default function ProductCard({ product }) {
     e.preventDefault()
     setIsAdding(true)
     try {
+      console.log('🛒 Adding product:', product.id)
       await addToCart(product.id, 1)
       alert('Product added to cart!')
     } catch (error) {
-      alert('Failed to add product to cart')
+      console.error('🛒 Add to cart error:', error)
+      alert(`Failed to add product to cart: ${error.message}`)
     } finally {
       setIsAdding(false)
     }
