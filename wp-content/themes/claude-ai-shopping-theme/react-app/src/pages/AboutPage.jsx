@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+
 
 export default function AboutPage() {
   const [page, setPage] = useState(null)
@@ -65,12 +65,12 @@ export default function AboutPage() {
             </ul>
             <p className="text-sm">Once created and published, scroll down to "About Page Sections" to add Mission, Vision, and Values!</p>
           </div>
-          <Link
-            to="/"
+          <a
+            href="/"
             className="inline-block mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg"
           >
             Back to Shop
-          </Link>
+          </a>
         </div>
       </div>
     )
@@ -159,12 +159,12 @@ export default function AboutPage() {
           <p className="text-lg mb-8 text-blue-100">
             Explore our collection of premium products
           </p>
-          <Link
-            to="/"
+          <a
+            href="/"
             className="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition"
           >
             Start Shopping Now
-          </Link>
+          </a>
         </div>
       </div>
     </div>

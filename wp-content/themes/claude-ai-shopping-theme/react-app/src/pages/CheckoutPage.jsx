@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+
 import axios from 'axios'
 import { useCart } from '../hooks/useCart'
 
@@ -25,9 +25,9 @@ export default function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <p className="text-gray-600 mb-6">Your cart is empty</p>
-          <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+          <a href="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
             Continue Shopping
-          </Link>
+          </a>
         </div>
       </div>
     )
@@ -250,12 +250,12 @@ export default function CheckoutPage() {
                 <span className="text-2xl font-bold text-blue-600">{total}</span>
               </div>
 
-              <Link
-                to="/cart"
+              <a
+                href="/cart"
                 className="block text-center text-blue-600 hover:text-blue-700 text-sm font-semibold"
               >
                 Edit Cart
-              </Link>
+              </a>
             </div>
           </div>
         </div>

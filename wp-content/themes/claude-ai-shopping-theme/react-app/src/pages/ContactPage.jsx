@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+
 
 export default function ContactPage() {
   const [page, setPage] = useState(null)
@@ -310,12 +310,12 @@ export default function ContactPage() {
           <p className="text-lg mb-8 text-blue-100 max-w-2xl mx-auto">
             Explore our collection of premium products and discover what's perfect for you
           </p>
-          <Link
-            to="/"
+          <a
+            href="/"
             className="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition"
           >
             Continue Shopping
-          </Link>
+          </a>
         </div>
       </div>
     </div>

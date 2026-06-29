@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+
 import { useCart } from '../hooks/useCart'
 
 export default function CartPage() {
@@ -38,9 +38,9 @@ export default function CartPage() {
           </svg>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">Start shopping to add items to your cart</p>
-          <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+          <a href="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
             Continue Shopping
-          </Link>
+          </a>
         </div>
       </div>
     )
@@ -162,19 +162,19 @@ export default function CartPage() {
                 <span className="text-2xl font-bold text-blue-600">{total}</span>
               </div>
 
-              <Link
-                to="/checkout"
+              <a
+                href="/checkout"
                 className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition mb-3"
               >
                 Proceed to Checkout
-              </Link>
+              </a>
 
-              <Link
-                to="/"
+              <a
+                href="/"
                 className="block w-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-lg text-center transition"
               >
                 Continue Shopping
-              </Link>
+              </a>
 
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-900">

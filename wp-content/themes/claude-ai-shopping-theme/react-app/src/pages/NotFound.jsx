@@ -10,12 +10,12 @@ export default function NotFound() {
         <p className="text-gray-600 mb-8 max-w-md">
           Sorry, the page you're looking for doesn't exist. It might have been removed or the link might be broken.
         </p>
-        <Link
-          to="/"
+        <a
+          href="/"
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition"
         >
           Go Back Home
-        </Link>
+        </a>
       </div>
     </div>
   )

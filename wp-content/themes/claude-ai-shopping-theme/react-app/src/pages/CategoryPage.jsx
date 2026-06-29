@@ -1,10 +1,8 @@
 import React, { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useCart'
 
-export default function CategoryPage() {
-  const { categoryId } = useParams()
+export default function CategoryPage({ categoryId }) {
   const [filterPrice, setFilterPrice] = useState('')
   const [sortBy, setSortBy] = useState('date')
 
@@ -36,9 +34,9 @@ export default function CategoryPage() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="text-blue-100 hover:text-white text-sm mb-4 inline-block">
+          <a href="/" className="text-blue-100 hover:text-white text-sm mb-4 inline-block cursor-pointer">
             ← Back to Shop
-          </Link>
+          </a>
           <h1 className="text-5xl font-bold mb-4">{getCategoryName()}</h1>
           <p className="text-xl text-blue-100">
             Browse our {getCategoryName().toLowerCase()} collection
@@ -105,9 +103,9 @@ export default function CategoryPage() {
         {!loading && products.length === 0 && !error && (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-4">No products found in this category.</p>
-            <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+            <a href="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg cursor-pointer">
               Back to Shop
-            </Link>
+            </a>
           </div>
         )}
 

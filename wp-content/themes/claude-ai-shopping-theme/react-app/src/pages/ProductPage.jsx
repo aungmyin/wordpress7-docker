@@ -1,10 +1,8 @@
 import React, { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
 import { useProduct, useProducts, useCart } from '../hooks/useCart'
 
-export default function ProductPage() {
-  const { id } = useParams()
-  const { product, loading, error } = useProduct(id)
+export default function ProductPage({ productId }) {
+  const { product, loading, error } = useProduct(productId)
   const { products: relatedProducts } = useProducts({ per_page: 4 })
   const addToCart = useCart((state) => state.addToCart)
   const [quantity, setQuantity] = useState(1)
@@ -38,9 +36,9 @@ export default function ProductPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
             <p>Product not found</p>
-            <Link to="/" className="text-red-600 hover:text-red-800 mt-4 inline-block">
+            <a href="/" className="text-red-600 hover:text-red-800 mt-4 inline-block cursor-pointer">
               ← Back to Shopping
-            </Link>
+            </a>
           </div>
         </div>
       </div>
@@ -58,13 +56,13 @@ export default function ProductPage() {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-blue-600">Home</Link>
+            <a href="/" className="hover:text-blue-600">Home</a>
             <span>/</span>
             {product.categories && product.categories.length > 0 ? (
               <>
-                <Link to={`/category/${product.categories[0].id}`} className="hover:text-blue-600">
+                <a to={`/category/${product.categories[0].id}`} className="hover:text-blue-600">
                   {product.categories[0].name}
-                </Link>
+                </a>
                 <span>/</span>
               </>
             ) : null}
@@ -248,7 +246,7 @@ export default function ProductPage() {
             <h2 className="text-3xl font-bold text-gray-800 mb-8">Related Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.slice(0, 4).map((relProduct) => (
-                <Link
+                <a
                   key={relProduct.id}
                   to={`/product/${relProduct.id}`}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
@@ -264,7 +262,7 @@ export default function ProductPage() {
                     <h3 className="font-semibold text-gray-800 text-sm line-clamp-2">{relProduct.name}</h3>
                     <p className="text-blue-600 font-bold mt-2">${parseFloat(relProduct.price).toFixed(2)}</p>
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
           </div>
