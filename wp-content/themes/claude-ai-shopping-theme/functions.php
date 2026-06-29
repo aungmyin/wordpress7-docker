@@ -1091,3 +1091,9 @@ function claude_shopping_handle_contact_form($request) {
         'message' => 'Your enquiry has been sent successfully. We will get back to you soon.',
     ];
 }
+
+
+/**
+ * Include homepage settings
+ */
+require_once CLAUDE_SHOPPING_THEME_DIR . '/inc/homepage-settings.php';
