@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../hooks/useMockCart'
+import CartDrawer from './CartDrawer'
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -21,6 +22,8 @@ export default function Navbar() {
   }
 
   return (
+    <>
+    <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
     <nav className="bg-white shadow-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -179,5 +182,6 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+    </>
   )
 }

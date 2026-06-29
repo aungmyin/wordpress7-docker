@@ -1,37 +1,22 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../hooks/useMockCart'
 
 export default function CartDrawer({ isOpen, onClose }) {
   const items = useCart((state) => state.items)
   const total = useCart((state) => state.total)
-  const count = useCart((state) => state.count)
-  const loading = useCart((state) => state.loading)
   const removeFromCart = useCart((state) => state.removeFromCart)
-  const updateCart = useCart((state) => state.updateCart)
-  const [updatingKey, setUpdatingKey] = useState(null)
+  const updateQuantity = useCart((state) => state.updateQuantity)
 
-  const handleQuantityChange = async (key, newQuantity) => {
+  const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) {
-      handleRemove(key)
-      return
-    }
-    setUpdatingKey(key)
-    try {
-      await updateCart(key, newQuantity)
-    } catch (error) {
-      console.error('Failed to update quantity:', error)
-    } finally {
-      setUpdatingKey(null)
+      removeFromCart(productId)
+    } else {
+      updateQuantity(productId, newQuantity)
     }
   }
 
-  const handleRemove = async (key) => {
-    try {
-      await removeFromCart(key)
-    } catch (error) {
-      console.error('Failed to remove item:', error)
-    }
+  const handleRemove = (productId) => {
+    removeFromCart(productId)
   }
 
   return (
@@ -63,13 +48,7 @@ export default function CartDrawer({ isOpen, onClose }) {
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto" style={{ height: 'calc(100% - 200px)' }}>
-          {loading && !items.length && (
-            <div className="flex items-center justify-center h-32">
-              <p className="text-gray-500">Loading cart...</p>
-            </div>
-          )}
-
-          {!loading && items.length === 0 && (
+          {items.length === 0 && (
             <div className="flex flex-col items-center justify-center h-32 text-gray-500">
               <svg
                 className="w-16 h-16 mb-4"
@@ -90,15 +69,15 @@ export default function CartDrawer({ isOpen, onClose }) {
 
           {items.map((item) => (
             <div
-              key={item.key}
+              key={item.id}
               className="border-b px-6 py-4 flex gap-4"
             >
               {/* Product Image */}
               <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                {item.product_image ? (
+                {item.image ? (
                   <img
-                    src={item.product_image}
-                    alt={item.product_name}
+                    src={item.image}
+                    alt={item.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -111,7 +90,7 @@ export default function CartDrawer({ isOpen, onClose }) {
               {/* Product Details */}
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-gray-800 truncate">
-                  {item.product_name}
+                  {item.name}
                 </h3>
                 <p className="text-sm text-blue-600 font-bold mt-1">
                   ${parseFloat(item.price).toFixed(2)}
@@ -120,8 +99,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                 {/* Quantity Control */}
                 <div className="flex items-center gap-2 mt-3 border border-gray-300 rounded-lg w-fit">
                   <button
-                    onClick={() => handleQuantityChange(item.key, item.quantity - 1)}
-                    disabled={updatingKey === item.key}
+                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                     className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                   >
                     −
@@ -130,8 +108,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => handleQuantityChange(item.key, item.quantity + 1)}
-                    disabled={updatingKey === item.key}
+                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                     className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                   >
                     +
@@ -140,7 +117,7 @@ export default function CartDrawer({ isOpen, onClose }) {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => handleRemove(item.key)}
+                  onClick={() => handleRemove(item.id)}
                   className="mt-2 text-xs text-red-500 hover:text-red-700 font-semibold"
                 >
                   Remove
@@ -162,13 +139,13 @@ export default function CartDrawer({ isOpen, onClose }) {
               <span>Total:</span>
               <span className="text-blue-600">{total}</span>
             </div>
-            <Link
-              to="/checkout"
+            <a
+              href="/checkout"
               onClick={onClose}
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition"
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition cursor-pointer"
             >
               Checkout
-            </Link>
+            </a>
             <button
               onClick={onClose}
               className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition"
@@ -180,13 +157,13 @@ export default function CartDrawer({ isOpen, onClose }) {
 
         {items.length === 0 && (
           <div className="border-t px-6 py-4">
-            <Link
-              to="/"
+            <a
+              href="/"
               onClick={onClose}
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition"
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center transition cursor-pointer"
             >
               Start Shopping
-            </Link>
+            </a>
           </div>
         )}
       </div>

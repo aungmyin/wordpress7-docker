@@ -16,11 +16,11 @@ const CART_NONCE = config.cartNonce || ''
 console.log('🛒 Cart config:', { REST_URL, STORE_API_URL, CART_NONCE })
 
 // Configure axios instance for WooCommerce Store API
-// WooCommerce Store API typically doesn't require nonce for public endpoints
 const axiosInstance = axios.create({
   baseURL: STORE_API_URL,
   headers: {
     'Content-Type': 'application/json',
+    ...(CART_NONCE ? { 'Nonce': CART_NONCE } : {}),
   },
   withCredentials: true,
 })
@@ -66,6 +66,7 @@ const useCartStore = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       console.log('🛒 Adding to cart:', { productId, quantity })
+      console.log('🛒 Using nonce:', CART_NONCE)
       const response = await axiosInstance.post('/cart/add-item', {
         id: productId,
         quantity,
@@ -80,13 +81,14 @@ const useCartStore = create((set, get) => ({
       })
       return cartData
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to add to cart'
-      console.error('❌ Add to cart error:', errorMsg, error)
+      const errorMsg = error.response?.data?.message || error.response?.data?.code || error.message || 'Failed to add to cart'
+      console.error('❌ Add to cart full error:', error.response?.data, error)
       set({
         error: errorMsg,
         loading: false,
       })
-      throw new Error(errorMsg)
+      // Don't throw, just return error in state
+      return { items: [], total: '$0', count: 0, error: errorMsg }
     }
   },
 

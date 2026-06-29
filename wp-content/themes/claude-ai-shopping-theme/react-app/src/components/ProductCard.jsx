@@ -1,20 +1,19 @@
 import React from 'react'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../hooks/useMockCart'
 
 export default function ProductCard({ product }) {
   const addToCart = useCart((state) => state.addToCart)
   const [isAdding, setIsAdding] = React.useState(false)
 
-  const handleAddToCart = async (e) => {
+  const handleAddToCart = (e) => {
     e.preventDefault()
     setIsAdding(true)
+
     try {
-      console.log('🛒 Adding product:', product.id)
-      await addToCart(product.id, 1)
-      alert('Product added to cart!')
+      addToCart(product)
+      alert('✅ Added to cart!')
     } catch (error) {
-      console.error('🛒 Add to cart error:', error)
-      alert(`Failed to add product to cart: ${error.message}`)
+      alert(`Error: ${error?.message || 'Failed to add to cart'}`)
     } finally {
       setIsAdding(false)
     }

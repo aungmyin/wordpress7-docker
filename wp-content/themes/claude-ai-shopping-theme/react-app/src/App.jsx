@@ -1,5 +1,6 @@
 import React from 'react'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import ProductPage from './pages/ProductPage'
 import CategoryPage from './pages/CategoryPage'
@@ -8,7 +9,7 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import ContactPage from './pages/ContactPage'
 import NotFound from './pages/NotFound'
-import { CartProvider } from './hooks/useCart'
+import { CartProvider } from './hooks/useMockCart'
 
 // Register Service Worker for caching
 if ('serviceWorker' in navigator) {
@@ -80,6 +81,7 @@ export default function App() {
         <main className="flex-1 bg-gray-50">
           <PageContent currentPage={currentPage} />
         </main>
+        <Footer />
       </div>
     </CartProvider>
   )
