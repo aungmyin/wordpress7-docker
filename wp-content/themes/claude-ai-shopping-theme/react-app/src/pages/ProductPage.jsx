@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { useProduct, useProducts, useCart } from '../hooks/useCart'
+import { useProduct, useProducts } from '../hooks/useCart'
+import { useCart } from '../hooks/useMockCart'
 
 export default function ProductPage({ productId }) {
   const { product, loading, error } = useProduct(productId)
@@ -9,10 +10,10 @@ export default function ProductPage({ productId }) {
   const [isAdding, setIsAdding] = useState(false)
   const [selectedImage, setSelectedImage] = useState(0)
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = () => {
     setIsAdding(true)
     try {
-      await addToCart(product.id, quantity)
+      addToCart({ ...product, quantity })
       alert('✓ Product added to cart!')
       setQuantity(1)
     } catch (error) {

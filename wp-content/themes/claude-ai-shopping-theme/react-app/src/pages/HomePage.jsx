@@ -156,21 +156,38 @@ export default function HomePage({ searchQuery }) {
           </div>
         )}
 
-        {/* Categories Section */}
+        {/* Categories Slider Section */}
         {!finalSearchQuery && categories.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-12 mb-16">
             <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Shop by Category</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category, index) => {
-                const colors = ['from-blue-500 to-blue-600', 'from-green-500 to-green-600', 'from-purple-500 to-purple-600']
-                return (
-                  <a key={category.id} href={`/category/${category.id}`} className={`bg-gradient-to-r ${colors[index % colors.length]} text-white p-8 rounded-lg text-center transition transform hover:scale-105 block cursor-pointer`}>
-                    <h3 className="text-2xl font-bold mb-2">{category.name}</h3>
-                    <p className="opacity-90">{category.count} products</p>
-                  </a>
-                )
-              })}
+            <div className="relative">
+              <div className="overflow-x-auto scrollbar-hide" style={{scrollBehavior: 'smooth'}}>
+                <div className="flex gap-6" style={{minWidth: 'min-content'}}>
+                  {categories.map((category, index) => {
+                    const colors = ['from-blue-500 to-blue-600', 'from-green-500 to-green-600', 'from-purple-500 to-purple-600', 'from-pink-500 to-pink-600', 'from-orange-500 to-orange-600', 'from-red-500 to-red-600']
+                    return (
+                      <a
+                        key={category.id}
+                        href={`/category/${category.id}`}
+                        className={`bg-gradient-to-r ${colors[index % colors.length]} text-white p-8 rounded-lg text-center transition transform hover:scale-105 block cursor-pointer flex-shrink-0 w-48`}
+                      >
+                        <h3 className="text-xl font-bold mb-2">{category.name}</h3>
+                        <p className="opacity-90 text-sm">{category.count} products</p>
+                      </a>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+              .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+            `}</style>
           </div>
         )}
 
