@@ -242,9 +242,18 @@ export function useProduct(productId) {
       setLoading(true)
       setError(null)
       try {
-        const response = await axios.get(`${API_URL}/product/${productId}`)
-        setProduct(response.data)
+        // Fetch all products and find the one with matching ID
+        const response = await axios.get(`${REST_URL}/claude-shopping/v1/products?per_page=100`)
+        const foundProduct = response.data.find(p => p.id === parseInt(productId))
+
+        if (foundProduct) {
+          setProduct(foundProduct)
+          console.log('📦 Product loaded:', foundProduct)
+        } else {
+          setError('Product not found')
+        }
       } catch (err) {
+        console.error('❌ Product fetch error:', err.message)
         setError(err.message)
       } finally {
         setLoading(false)

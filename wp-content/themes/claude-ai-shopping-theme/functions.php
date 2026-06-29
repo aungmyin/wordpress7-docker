@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CLAUDE_SHOPPING_THEME_VERSION', '1.0.41');
+define('CLAUDE_SHOPPING_THEME_VERSION', '1.0.43');
 define('CLAUDE_SHOPPING_THEME_DIR', get_template_directory());
 define('CLAUDE_SHOPPING_THEME_URL', get_template_directory_uri());
 
