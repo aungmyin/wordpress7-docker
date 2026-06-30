@@ -285,3 +285,262 @@ Swap the `db` image to `mariadb:11` and change the healthcheck test to `["CMD", 
 
 Admin user: admin
 Admin psw: 6(IJ7#ql7!R9u54A99
+
+---
+
+## Running the Claude AI Shopping Theme (React + WordPress)
+
+This project includes a custom React-based eCommerce theme. Follow these steps to set up the complete system on another computer.
+
+### Prerequisites
+
+- Docker & Docker Compose (see Step 0 above)
+- Node.js 18+ (`node --version`)
+- Git (`git --version`)
+- npm (`npm --version`)
+
+### Step A — Clone the repository
+
+```bash
+git clone https://github.com/aungmyin/wordpress7-docker.git
+cd wordpress7-docker
+```
+
+**Verify:** You are in the project directory and can see `docker-compose.yml`, `.env`, `wp-content/`, and `README.md`.
+
+---
+
+### Step B — Start WordPress in Docker
+
+```bash
+docker compose up -d
+```
+
+Then wait for WordPress to be ready (see Step 6 in the runbook above):
+
+```bash
+for i in $(seq 1 30); do
+  code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/wp-admin/install.php)
+  [ "$code" = "200" ] || [ "$code" = "302" ] && echo "WORDPRESS_READY" && break
+  echo "attempt $i: HTTP $code"
+  sleep 3
+done
+```
+
+**Verify:** Prints `WORDPRESS_READY` and `http://localhost:8080` responds with the WordPress site.
+
+---
+
+### Step C — Install React theme dependencies
+
+The theme is a React app bundled with Vite. Install dependencies:
+
+```bash
+cd wp-content/themes/claude-ai-shopping-theme/react-app
+npm install
+```
+
+**Verify:** `node_modules/` directory exists and `package-lock.json` is created.
+
+---
+
+### Step D — Build the React theme
+
+```bash
+npm run build
+```
+
+This generates optimized bundle files in `dist/` directory.
+
+**Verify:** 
+```bash
+ls dist/assets/*.js
+```
+
+Should show bundled JavaScript files.
+
+---
+
+### Step E — Activate the theme in WordPress
+
+1. Open `http://localhost:8080/wp-admin/` in your browser
+2. Login with credentials:
+   - Username: `admin`
+   - Password: `6(IJ7#ql7!R9u54A99`
+3. Go to **Appearance → Themes**
+4. Find **Claude AI Shopping Theme** and click **Activate**
+
+**Verify:** The homepage at `http://localhost:8080` now shows the React theme with:
+- Hero section
+- Featured products grid
+- Popular products slider
+- Categories carousel
+- Discount banner
+- Testimonials
+- Trust badges
+- FAQ section
+- Footer
+
+---
+
+### Step F — Manage homepage content (admin panel)
+
+To customize all homepage sections without editing code:
+
+1. Go to WordPress admin: `http://localhost:8080/wp-admin/`
+2. Navigate to **Appearance → Homepage Settings**
+3. Edit any section titles and click **Save Settings**
+4. Changes appear **instantly** on the frontend!
+
+You can customize:
+- Hero section title & subtitle
+- Popular products section title & subtitle
+- Discount section title & subtitle
+- Testimonials section title
+- Trust badges section title
+- FAQ section title
+
+---
+
+## Daily Workflow
+
+### Running in development mode (live reload)
+
+If you want to modify the React theme and see changes live:
+
+```bash
+# In one terminal, keep WordPress running
+docker compose logs -f wordpress
+
+# In another terminal, start Vite dev server
+cd wp-content/themes/claude-ai-shopping-theme/react-app
+npm run dev
+```
+
+The dev server runs on `http://localhost:3000` with hot module reloading.
+
+### Building after changes
+
+After making changes to the React code:
+
+```bash
+cd wp-content/themes/claude-ai-shopping-theme/react-app
+npm run build
+```
+
+Then refresh your browser to see changes.
+
+### Stopping everything
+
+```bash
+docker compose stop
+```
+
+To start again later:
+
+```bash
+docker compose start
+```
+
+### Complete cleanup (destructive)
+
+```bash
+docker compose down -v  # Removes all data!
+```
+
+---
+
+## Theme Features
+
+### ✅ Shopping Cart
+- Mock localStorage-based cart (no backend API required)
+- Floating cart icon in navbar with badge counter
+- Side drawer panel with add/remove/quantity controls
+- Cart persists across page refreshes
+
+### ✅ Product Browsing
+- Homepage with featured products
+- Category browsing with horizontal scrollable slider
+- Individual product detail pages
+- Product images and descriptions
+- Add to cart from product cards
+
+### ✅ Admin Management
+- Homepage Settings panel to customize all section titles
+- No code editing required for content changes
+
+### ✅ Performance
+- React 18 with Vite bundling (IIFE format for WordPress compatibility)
+- Service worker for caching
+- Responsive design with Tailwind CSS
+- Optimized for mobile, tablet, and desktop
+
+### ✅ SEO Features
+- FAQ section with structured content
+- Trust badges section
+- Testimonials section
+- Categories slider for better browsing
+
+---
+
+## Troubleshooting
+
+**Theme not showing on homepage**
+- Verify theme is activated in **Appearance → Themes**
+- Check React bundle built successfully: `ls dist/assets/*.js`
+- Hard refresh browser: Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows/Linux)
+
+**Shopping cart not working**
+- Check browser console for errors (F12)
+- Verify mock cart uses localStorage (not API calls)
+- Try adding product from home page and check cart icon badge
+
+**Homepage settings not saved**
+- Go to **Appearance → Homepage Settings**
+- Ensure you have admin privileges
+- Hard refresh after saving to see changes
+
+**Build errors**
+```bash
+cd wp-content/themes/claude-ai-shopping-theme/react-app
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+---
+
+## Project Structure
+
+```
+wordpress7-docker/
+├── docker-compose.yml           # Docker services definition
+├── .env                         # Environment variables (passwords, ports)
+├── wp-content/
+│   └── themes/
+│       └── claude-ai-shopping-theme/
+│           ├── functions.php    # Theme setup & React bundle enqueue
+│           ├── inc/
+│           │   └── homepage-settings.php  # Admin panel & REST API
+│           ├── react-app/       # React application
+│           │   ├── src/
+│           │   │   ├── App.jsx                    # Main app component
+│           │   │   ├── pages/                     # Page components
+│           │   │   ├── components/                # Reusable components
+│           │   │   ├── hooks/                     # Custom React hooks
+│           │   │   │   └── useMockCart.jsx       # Shopping cart (localStorage)
+│           │   │   └── styles/
+│           │   ├── dist/                          # Build output
+│           │   ├── package.json
+│           │   └── vite.config.js
+│           └── sw.js            # Service worker for caching
+```
+
+---
+
+## Next Steps
+
+1. **Customize products**: Add/edit WooCommerce products in WordPress admin
+2. **Add testimonials**: Edit hardcoded testimonials in HomePage.jsx or create a REST endpoint
+3. **Extend cart**: Replace mock cart with real WooCommerce Store API
+4. **Deploy**: Use the production build and host on a server with Docker
